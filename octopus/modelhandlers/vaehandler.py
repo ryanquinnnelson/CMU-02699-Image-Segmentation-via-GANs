@@ -5,7 +5,7 @@ __author__ = 'ryanquinnnelson'
 
 import logging
 
-from octopus.models import vae
+from octopus.models import gan
 
 
 class VaeHandler:
@@ -40,7 +40,7 @@ class VaeHandler:
         """
         model = None
 
-        if self.model_type == 'PaperVAE':
+        if self.model_type == 'ZhangGAN':
             model = vae.PaperVAE(self.input_size, self.hidden_sizes, self.latent_dim, self.batch_normalization,
                                  self.dropout)
         logging.info(f'Model initialized:\n{model}')
