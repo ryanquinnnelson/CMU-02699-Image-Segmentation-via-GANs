@@ -58,7 +58,28 @@ class CnnBlock(nn.Module):
         self.cnn_block.apply(_init_weights)
 
     def forward(self, x):
-        return self.blocks(x)
+        return self.cnn_block(x)
+
+
+class UpConvBlock(nn.Module):
+
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+
+        self.up_block = nn.Sequential(
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True)
+        )
+
+        # initialize weights
+        self.up_block.apply(_init_weights)
+
+    def forward(self, x):
+        return self.up_block(x)
 
 
 class LinearBlock(nn.Module):
@@ -133,10 +154,16 @@ class SegmentationNetwork(nn.Module):
             CnnBlock(1024, 1024)  # shortcut to up-conv3
         )
 
-        self.block4 = nn.Sequential(
+        self.block4 = UpConvBlock(1024, 1024)
+
+        self.block5 = UpConvBlock(512, 512)
+
+        self.block6 = UpConvBlock(512, 512)
+
+        self.block7 = nn.Sequential(
             CnnBlock(2048, 1024),
             nn.Conv2d(1024, 256, kernel_size=1, stride=1, padding=1, bias=False),
-            nn.Softmax(dim=1)  # ?? dim1, number of classes
+            nn.Softmax(dim=1)  # ?? dim1, number of classes, softmax over 2d layer?
         )
 
     def forward(self, x):
@@ -144,12 +171,27 @@ class SegmentationNetwork(nn.Module):
         block2out = self.block2(block1out)
         block3out = self.block3(block2out)
 
+        logging.info(f'block1out.shape:{block1out.shape}')
+        logging.info(f'block2out.shape:{block2out.shape}')
+        logging.info(f'block3out.shape:{block3out.shape}')
+
+        # upconvolution
+        block4out = self.block4(block3out)
+        block5out = self.block5(block2out)
+        block6out = self.block6(block1out)
+
+        logging.info(f'block4out.shape:{block4out.shape}')
+        logging.info(f'block5out.shape:{block5out.shape}')
+        logging.info(f'block6out.shape:{block6out.shape}')
+
         # concatenate results
-        concatenated = torch.cat((block1out, block2out, block3out))
+        concatenated = torch.cat((block4out, block5out, block6out))
 
-        block4out = self.block4(concatenated)
+        logging.info(f'concatenated.shape:{concatenated.shape}')
 
-        return block4out
+        block7out = self.block7(concatenated)
+
+        return block7out
 
 
 class EvaluationNetwork(nn.Module):
@@ -193,6 +235,8 @@ class EvaluationNetwork(nn.Module):
 
         self.block2 = nn.Sequential(
 
+
+            nn.Flatten(),  # need to convert 2d block to 1d block
             LinearBlock(512, 256),
             LinearBlock(256, 128),
             LinearBlock(128, 64),
