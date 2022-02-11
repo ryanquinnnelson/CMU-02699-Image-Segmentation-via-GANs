@@ -24,7 +24,7 @@ from octopus.fixedhandlers.dataloaderhandler import DataLoaderHandler
 from octopus.fixedhandlers.outputhandler import OutputHandler
 from octopus.fixedhandlers.piphandler import PipHandler
 from octopus.datasethandlers.numericaldatasethandler import NumericalDatasetHandler
-from octopus.modelhandlers.vaehandler import VaeHandler
+from octopus.modelhandlers.ganhandler import GanHandler
 
 # customized to this data
 from customized.phases import Training, Evaluation, Generation
@@ -121,23 +121,27 @@ class Octopus:
 
         logging.info('octopus is initializing pipeline components...')
         # initialize model
-        self.model = self.modelhandler.get_model()
-        self.model = self.devicehandler.move_model_to_device(self.model)  # move before initializing optimizer - Note 1
-        self.wandbconnector.watch(self.model)
+        self.model1, self.model2 = self.modelhandler.get_model()
+        self.model1 = self.devicehandler.move_model_to_device(self.model1)  # move before initialize optimizer - Note 1
+        self.model2 = self.devicehandler.move_model_to_device(self.model2)
+        self.wandbconnector.watch(self.model1)
+        self.wandbconnector.watch(self.model2)
 
         # initialize model components
         self.loss_func = self.criterionhandler.get_loss_function()
-        self.optimizer = self.optimizerhandler.get_optimizer(self.model)
-        self.scheduler = self.schedulerhandler.get_scheduler(self.optimizer)
+        self.optimizer1 = self.optimizerhandler.get_optimizer(self.model1)
+        self.scheduler1 = self.schedulerhandler.get_scheduler(self.optimizer1)
+        self.optimizer2 = self.optimizerhandler.get_optimizer(self.model2)
+        self.scheduler2 = self.schedulerhandler.get_scheduler(self.optimizer2)
 
         # load data
-        self.train_loader, self.val_loader = self.dataloaderhandler.load(self.inputhandler)
-
-        # load phases
-        self.training = Training(self.train_loader, self.loss_func, self.devicehandler)
-        self.evaluation = Evaluation(self.val_loader, self.loss_func, self.devicehandler)
-        self.generation = Generation(self.config['hyperparameters'].getint('num_proteins_to_generate'),
-                                     self.devicehandler)
+        self.train_loader, self.val_loader, self.test_loader = self.dataloaderhandler.load(self.inputhandler)
+        #
+        # # load phases
+        # self.training = Training(self.train_loader, self.loss_func, self.devicehandler)
+        # self.evaluation = Evaluation(self.val_loader, self.loss_func, self.devicehandler)
+        # self.generation = Generation(self.config['hyperparameters'].getint('num_proteins_to_generate'),
+        #                              self.devicehandler)
 
         logging.info('Pipeline components are initialized.')
 
@@ -362,13 +366,9 @@ def initialize_variable_handlers(config):
         inputhandler = None
 
     # model
-    if 'VAE' in config['model']['model_type']:
-        modelhandler = VaeHandler(config['model']['model_type'],
-                                  config['model'].getint('input_size'),
-                                  _to_int_list(config['model']['hidden_sizes']),
-                                  config['model'].getint('latent_dim'),
-                                  config['model'].getboolean('batch_normalization'),
-                                  config['model'].getfloat('dropout'))
+    if 'GAN' in config['model']['model_type']:
+        modelhandler = GanHandler(config['model']['model_type'],
+                                  config['model'].getint('input_size'))
 
     else:
         modelhandler = None

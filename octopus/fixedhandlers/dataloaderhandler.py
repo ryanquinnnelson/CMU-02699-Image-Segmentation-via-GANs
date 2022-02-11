@@ -64,8 +64,11 @@ class DataLoaderHandler:
             self.val_args = dict(shuffle=False,
                                  batch_size=self.batch_size)
 
+        self.test_args = self.val_args # test and validation have matching arguments
+
         logging.info(f'DataLoader settings for training dataset:{self.train_args}')
         logging.info(f'DataLoader settings for validation dataset:{self.val_args}')
+        logging.info(f'DataLoader settings for test dataset:{self.test_args}')
 
     def train_dataloader(self, dataset):
         """
@@ -91,6 +94,18 @@ class DataLoaderHandler:
         dl = DataLoader(dataset, **self.val_args)
         return dl
 
+    def test_dataloader(self, dataset):
+        """
+        Obtain DataLoader for test dataset.
+        Args:
+            dataset (Dataset): defines validation data
+
+        Returns: DataLoader
+
+        """
+        dl = DataLoader(dataset, **self.test_args)
+        return dl
+
     def load(self, inputhandler):
 
         logging.info('Loading data...')
@@ -98,9 +113,11 @@ class DataLoaderHandler:
         # Datasets
         train_dataset = inputhandler.get_train_dataset()
         val_dataset = inputhandler.get_val_dataset()
+        test_dataset = inputhandler.get_test_dataset()
 
         # DataLoaders
         train_dl = self.train_dataloader(train_dataset)
         val_dl = self.val_dataloader(val_dataset)
+        test_dl = self.test_dataloader(test_dataset)
 
-        return train_dl, val_dl
+        return train_dl, val_dl, test_dl

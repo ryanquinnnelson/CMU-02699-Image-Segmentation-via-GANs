@@ -58,19 +58,29 @@ class CnnBlock(nn.Module):
         self.cnn_block.apply(_init_weights)
 
     def forward(self, x):
-        return self.cnn_block(x)
+        logging.info(f'cnn_block_input:{x.shape}')
+        x = self.cnn_block(x)
+        logging.info(f'cnn_block:{x.shape}')
+        return x
 
 
+# bi-linear interpolation, or learned up-sampling filters
+
+# nn.Upsample(size=None, scale_factor=None, mode='bilinear')
+
+
+# nn.functional.interpolate(input, size=None, scale_factor=None, mode='bilinear')
+# https://pytorch.org/docs/stable/generated/torch.nn.functional.interpolate.html
 class UpConvBlock(nn.Module):
 
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, size):
         super().__init__()
 
         self.in_channels = in_channels
         self.out_channels = out_channels
 
         self.up_block = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.Upsample(size=size, mode='bilinear'),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True)
         )
@@ -79,7 +89,10 @@ class UpConvBlock(nn.Module):
         self.up_block.apply(_init_weights)
 
     def forward(self, x):
-        return self.up_block(x)
+        logging.info(f'up_block_input:{x.shape}')
+        x = self.up_block(x)
+        logging.info(f'up_block:{x.shape}')
+        return x
 
 
 class LinearBlock(nn.Module):
@@ -99,11 +112,14 @@ class LinearBlock(nn.Module):
         self.linear_block.apply(_init_weights)
 
     def forward(self, x):
-        return self.linear_block(x)
+        logging.info(f'linear_block_input:{x.shape}')
+        x = self.linear_block(x)
+        logging.info(f'linear_block:{x.shape}')
+        return x
 
 
 class SegmentationNetwork(nn.Module):
-    def __init__(self, in_features):
+    def __init__(self, in_features, input_size):
         super().__init__()
 
         self.block1 = nn.Sequential(
@@ -154,16 +170,16 @@ class SegmentationNetwork(nn.Module):
             CnnBlock(1024, 1024)  # shortcut to up-conv3
         )
 
-        self.block4 = UpConvBlock(1024, 1024)
+        self.block4 = UpConvBlock(1024, 1024, input_size)
 
-        self.block5 = UpConvBlock(512, 512)
+        self.block5 = UpConvBlock(512, 512, input_size)
 
-        self.block6 = UpConvBlock(512, 512)
+        self.block6 = UpConvBlock(512, 512, input_size)
 
         self.block7 = nn.Sequential(
             CnnBlock(2048, 1024),
-            nn.Conv2d(1024, 256, kernel_size=1, stride=1, padding=1, bias=False),
-            nn.Softmax(dim=1)  # ?? dim1, number of classes, softmax over 2d layer?
+            nn.Conv2d(1024, 2, kernel_size=1, stride=1, padding=1, bias=False),  # two classes
+            nn.Softmax(dim=2)  # third dimension is number of classes
         )
 
     def forward(self, x):
@@ -190,6 +206,8 @@ class SegmentationNetwork(nn.Module):
         logging.info(f'concatenated.shape:{concatenated.shape}')
 
         block7out = self.block7(concatenated)
+
+        logging.info(f'block7out.shape:{block7out.shape}')
 
         return block7out
 
@@ -235,8 +253,7 @@ class EvaluationNetwork(nn.Module):
 
         self.block2 = nn.Sequential(
 
-
-            nn.Flatten(),  # need to convert 2d block to 1d block
+            nn.Flatten(),  # need to convert 2d to 1d
             LinearBlock(512, 256),
             LinearBlock(256, 128),
             LinearBlock(128, 64),
@@ -247,6 +264,10 @@ class EvaluationNetwork(nn.Module):
 
     def forward(self, x):
         block1out = self.block1(x)
+
+        logging.info(f'block1out:{block1out.shape}')
         block2out = self.block2(block1out)
+
+        logging.info(f'block2out:{block2out.shape}')
 
         return block2out

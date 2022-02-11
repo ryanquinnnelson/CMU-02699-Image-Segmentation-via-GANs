@@ -29,10 +29,9 @@ val_metric_name=val_acc
 
 
 [data]
-data_type = numerical
-data_dir = /Users/ryanqnelson/Desktop/test/content/data/proteins
-train_data=/Users/ryanqnelson/Desktop/test/content/data/proteins/encoded_protein_seq_train.npy
-val_data=/Users/ryanqnelson/Desktop/test/content/data/proteins/encoded_protein_seq_val.npy
+data_type = image
+data_dir = /Users/ryanqnelson/Desktop/test/data/warwick
+train_dir = /Users/ryanqnelson/Desktop/test/data/warwick/
 
 
 
@@ -45,16 +44,13 @@ output_dir = /Users/ryanqnelson/Desktop/test/output
 [dataloader]
 num_workers=8
 pin_memory=True
-batch_size=128
+batch_size=16
 
 
 [model]
-model_type=PaperVAE
+model_type=ZhangGAN
 input_size=13684
-hidden_sizes=8192,4096,2048
-latent_dim=1024
-batch_normalization=False
-dropout=0.0
+
 
 
 [checkpoint]
@@ -66,10 +62,9 @@ checkpoint_file =  None
 
 
 [hyperparameters]
-num_proteins_to_generate = 100
 num_epochs = 30
-criterion_type=CustomLoss1
-criterion_kwargs=use_burn_in=False,delta_burn_in=0.003,burn_in_start=0
+criterion_type=CrossEntropyLoss
+criterion_kwargs=use_burn_in=False
 optimizer_type=Adam
 optimizer_kwargs=lr=0.002,weight_decay=0.000005
 scheduler_type=ReduceLROnPlateau

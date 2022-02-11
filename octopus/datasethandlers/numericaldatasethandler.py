@@ -6,10 +6,34 @@ __author__ = 'ryanquinnnelson'
 import logging
 
 import numpy as np
+import torchvision.transforms as transforms
 
 
-class NumericalDatasetHandler:
-    def __init__(self, data_dir, train_data, val_data, train_class, val_class):
+def _compose_transforms(transforms_list):
+    """
+    Build a composition of transformations to perform on image data.
+    Args:
+        transforms_list (List): list of strings representing individual transformations,
+        in the order they should be performed
+    Returns: transforms.Compose object containing all desired transformations
+    """
+    t_list = []
+
+    for each in transforms_list:
+        if each == 'RandomHorizontalFlip':
+            t_list.append(transforms.RandomHorizontalFlip(0.1))  # customized because 0.5 is too much
+        elif each == 'ToTensor':
+            t_list.append(transforms.ToTensor())
+        elif each == 'Resize':
+            t_list.append(transforms.Resize((775, 522), interpolation='bilinear'))
+
+    composition = transforms.Compose(t_list)
+
+    return composition
+
+
+class ImageDatasetHandler:
+    def __init__(self, data_dir, train_dir, val_dir, test_dir, dataset_class, train_transforms):
         """
         Initialize NumericalDatasetHandler.
 
@@ -20,13 +44,18 @@ class NumericalDatasetHandler:
         :param val_class (Dataset): torch Dataset class to use for validation data
         """
 
-        logging.info('Initializing numerical dataset handler...')
+        logging.info('Initializing image dataset handler...')
 
         self.data_dir = data_dir
-        self.train_data = train_data
-        self.val_data = val_data
-        self.train_class = train_class
-        self.val_class = val_class
+        self.train_dir = train_dir
+        self.val_dir = val_dir
+        self.test_dir = test_dir
+        self.dataset_class = dataset_class
+        self.train_transforms = train_transforms
+
+        # determine whether normalize transform should also be applied to validation and test data
+        self.should_normalize_val = True if 'Normalize' in train_transforms else False
+        self.should_normalize_test = True if 'Normalize' in train_transforms else False
 
     def get_train_dataset(self):
         """
@@ -34,13 +63,9 @@ class NumericalDatasetHandler:
         :return: Dataset
         """
 
-        # load data
-        data = np.load(self.train_data, allow_pickle=True)
-        logging.info(f'Loaded {len(data)} training records.')
-
         # initialize dataset
-        dataset = self.train_class(data)
-
+        dataset = self.dataset_class(self.train_dir, self.train_transforms)
+        logging.info(f'Loaded {len(dataset)} training images.')
         return dataset
 
     def get_val_dataset(self):
@@ -49,11 +74,30 @@ class NumericalDatasetHandler:
         :return: Dataset
         """
 
-        # load data
-        data = np.load(self.val_data, allow_pickle=True)
-        logging.info(f'Loaded {len(data)} validation records.')
+        if self.should_normalize_val:
+            logging.info('Normalizing validation data to match normalization of training data...')
+            t = _compose_transforms(['ToTensor', 'Normalize'])
+        else:
+            t = _compose_transforms(['ToTensor'])
 
         # initialize dataset
-        dataset = self.val_class(data)
+        dataset = self.dataset_class(self.val_dir, t)
+        logging.info(f'Loaded {len(dataset)} validation images.')
+        return dataset
 
+    def get_test_dataset(self):
+        """
+        Load validation data into memory and initialize the Dataset object.
+        :return: Dataset
+        """
+
+        if self.should_normalize_test:
+            logging.info('Normalizing validation data to match normalization of training data...')
+            t = _compose_transforms(['ToTensor', 'Normalize'])
+        else:
+            t = _compose_transforms(['ToTensor'])
+
+        # initialize dataset
+        dataset = self.dataset_class(self.test_dir, t)
+        logging.info(f'Loaded {len(dataset)} test images.')
         return dataset

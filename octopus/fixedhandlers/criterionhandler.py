@@ -42,10 +42,7 @@ class CriterionHandler:
             criterion = nn.CrossEntropyLoss()
 
         elif self.criterion_type == 'CustomLoss1':
-            criterion = crit.CustomCriterion1(**self.criterion_dict)
-
-        elif self.criterion_type == 'CustomLoss2':
-            criterion = crit.CustomCriterion2(**self.criterion_dict)
+            criterion = crit.CustomCriterion1()
 
         logging.info(f'Criterion is set:\n{criterion}')
         return criterion
