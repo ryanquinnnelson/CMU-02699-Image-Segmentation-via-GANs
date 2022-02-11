@@ -23,14 +23,13 @@ from octopus.fixedhandlers.phasehandler import PhaseHandler
 from octopus.fixedhandlers.dataloaderhandler import DataLoaderHandler
 from octopus.fixedhandlers.outputhandler import OutputHandler
 from octopus.fixedhandlers.piphandler import PipHandler
-from octopus.datasethandlers.numericaldatasethandler import NumericalDatasetHandler
+from octopus.datasethandlers.imagedatasethandler import ImageDatasetHandler
 from octopus.modelhandlers.ganhandler import GanHandler
 
 # customized to this data
-from customized.phases import Training, Evaluation, Generation
+from customized.phases import Training, Evaluation, Testing
 from customized.formatters import OutputFormatter
-from customized.datasets import TrainValDataset
-import customized.datasets as customized_datasets
+from customized.datasets import ImageDataset
 
 
 class Octopus:
@@ -136,12 +135,11 @@ class Octopus:
 
         # load data
         self.train_loader, self.val_loader, self.test_loader = self.dataloaderhandler.load(self.inputhandler)
-        #
-        # # load phases
-        # self.training = Training(self.train_loader, self.loss_func, self.devicehandler)
-        # self.evaluation = Evaluation(self.val_loader, self.loss_func, self.devicehandler)
-        # self.generation = Generation(self.config['hyperparameters'].getint('num_proteins_to_generate'),
-        #                              self.devicehandler)
+
+        # load phases
+        self.training = Training(self.train_loader, self.loss_func, self.devicehandler)
+        self.evaluation = Evaluation(self.val_loader, self.loss_func, self.devicehandler)
+        self.testing = Testing(self.test_loader, self.loss_func, self.devicehandler)
 
         logging.info('Pipeline components are initialized.')
 
@@ -159,8 +157,8 @@ class Octopus:
         logging.info('octopus is running the pipeline...')
 
         # run epochs
-        self.phasehandler.process_epochs(self.model, self.optimizer, self.scheduler, self.training, self.evaluation,
-                                         self.generation)
+        self.phasehandler.process_epochs(self.model1, self.optimizer1, self.scheduler1, self.training, self.evaluation,
+                                         self.testing)
 
         logging.info('octopus has finished running the pipeline.')
 
@@ -356,12 +354,17 @@ def initialize_variable_handlers(config):
 
     """
     # input
-    if config['data']['data_type'] == 'numerical':
-        inputhandler = NumericalDatasetHandler(config['data']['data_dir'],
-                                               config['data']['train_data'],
-                                               config['data']['val_data'],
-                                               TrainValDataset,
-                                               TrainValDataset)
+    if config['data']['data_type'] == 'image':
+        inputhandler = ImageDatasetHandler(config['data']['data_dir'],
+                                           config['data']['train_dir'],
+                                           config['data']['train_target_dir'],
+                                           config['data']['val_dir'],
+                                           config['data']['val_target_dir'],
+                                           config['data']['test_dir'],
+                                           config['data']['test_target_dir'],
+                                           ImageDataset,
+                                           _to_string_list(config['data']['transforms_list']))
+
     else:
         inputhandler = None
 

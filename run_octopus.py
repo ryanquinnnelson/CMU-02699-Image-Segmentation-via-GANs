@@ -26,8 +26,8 @@ def main():
         octopus.install_packages()
         octopus.setup_environment()
         octopus.initialize_pipeline_components()
-        # octopus.run_pipeline()
-        # octopus.cleanup()
+        octopus.run_pipeline()
+        octopus.cleanup()
 
 
 if __name__ == "__main__":

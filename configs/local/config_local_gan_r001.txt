@@ -31,7 +31,13 @@ val_metric_name=val_acc
 [data]
 data_type = image
 data_dir = /Users/ryanqnelson/Desktop/test/data/warwick
-train_dir = /Users/ryanqnelson/Desktop/test/data/warwick/
+train_dir = /Users/ryanqnelson/Desktop/test/data/warwick/training
+train_target_dir = /Users/ryanqnelson/Desktop/test/data/warwick/training_anno
+val_dir = /Users/ryanqnelson/Desktop/test/data/warwick/a
+val_target_dir = /Users/ryanqnelson/Desktop/test/data/warwick/a_anno
+test_dir = /Users/ryanqnelson/Desktop/test/data/warwick/b
+test_target_dir = /Users/ryanqnelson/Desktop/test/data/warwick/b_anno
+transforms_list = ToTensor
 
 
 

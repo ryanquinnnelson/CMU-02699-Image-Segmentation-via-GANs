@@ -6,13 +6,32 @@ __author__ = 'ryanquinnnelson'
 from torch.utils.data import Dataset
 import os
 from PIL import Image
+import random
+import torchvision.transforms as transforms
+
+
+def _apply_transformations(img, target):
+    if random.random() > 0.5:
+        print('vflip')
+        img = transforms.functional_pil.vflip(img)
+        target = transforms.functional_pil.vflip(target)
+
+    if random.random() > 0.5:
+        print('hflip')
+        img = transforms.functional_pil.hflip(img)
+        target = transforms.functional_pil.hflip(target)
+
+    return img, target
 
 
 class ImageDataset(Dataset):
 
-    def __init__(self, img_dir, transform=None):
+    def __init__(self, img_dir, targets_dir, transform=None):
         self.img_dir = img_dir
+        self.targets_dir = targets_dir
         self.transform = transform
+
+        # prepare image list
         img_list = os.listdir(img_dir)
         img_list.sort()
         img_list.remove('.DS_Store')  # remove mac generated files
@@ -23,7 +42,27 @@ class ImageDataset(Dataset):
 
     def __getitem__(self, idx):
         img_path = os.path.join(self.img_dir, self.img_list[idx])
+
+        # generate target name
+        # target image name matches image but also includes suffix
+        img_name = self.img_list[idx][:-4]  # strip .bmp
+        target_path = os.path.join(self.targets_dir, img_name + '_anno.bmp')
+
         img = Image.open(img_path).convert('RGB')
-        img = img.resize((775, 522), resample=Image.BILINEAR) # standardize image size
+        target = Image.open(target_path).convert('RGB')
+        img = img.resize((775, 522), resample=Image.BILINEAR)  # standardize image size
+        target = target.resize((775, 522), resample=Image.BILINEAR)  # standardize target size
+
+        # apply matching transformations to image and target
+        img, target = _apply_transformations(img, target)
+
+        # convert to tensors
         tensor_img = self.transform(img)
-        return tensor_img
+        tensor_target = self.transform(target)
+
+        # convert all nonzero target values to 1
+        # nonzero values indicate segment
+        # zero values indicate background
+        tensor_target[tensor_target != 0] = 1.0
+
+        return tensor_img, tensor_target
