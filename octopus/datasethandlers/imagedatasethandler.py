@@ -33,7 +33,11 @@ def _compose_transforms(transforms_list):
 
 
 class ImageDatasetHandler:
-    def __init__(self, data_dir, train_dir, val_dir, test_dir, dataset_class, train_transforms):
+    def __init__(self, data_dir,
+                 train_dir, train_target_dir,
+                 val_dir, val_target_dir,
+                 test_dir, test_target_dir,
+                 dataset_class, train_transforms):
         """
         Initialize NumericalDatasetHandler.
 
@@ -48,8 +52,11 @@ class ImageDatasetHandler:
 
         self.data_dir = data_dir
         self.train_dir = train_dir
+        self.train_target_dir = train_target_dir
         self.val_dir = val_dir
+        self.val_target_dir = val_target_dir
         self.test_dir = test_dir
+        self.test_target_dir = test_target_dir
         self.dataset_class = dataset_class
         self.train_transforms = train_transforms
 
@@ -64,7 +71,7 @@ class ImageDatasetHandler:
         """
 
         # initialize dataset
-        dataset = self.dataset_class(self.train_dir, self.train_transforms)
+        dataset = self.dataset_class(self.train_dir, self.train_target_dir, self.train_transforms)
         logging.info(f'Loaded {len(dataset)} training images.')
         return dataset
 
@@ -81,7 +88,7 @@ class ImageDatasetHandler:
             t = _compose_transforms(['ToTensor'])
 
         # initialize dataset
-        dataset = self.dataset_class(self.val_dir, t)
+        dataset = self.dataset_class(self.val_dir, self.val_target_dir, t)
         logging.info(f'Loaded {len(dataset)} validation images.')
         return dataset
 
@@ -98,6 +105,6 @@ class ImageDatasetHandler:
             t = _compose_transforms(['ToTensor'])
 
         # initialize dataset
-        dataset = self.dataset_class(self.test_dir, t)
+        dataset = self.dataset_class(self.test_dir, self.test_target_dir, t)
         logging.info(f'Loaded {len(dataset)} test images.')
         return dataset
