@@ -182,32 +182,30 @@ class SegmentationNetwork(nn.Module):
             nn.Softmax(dim=1)  # second dimension is number of classes
         )
 
-    def forward(self, x):
+    def forward(self, x, i):
         block1out = self.block1(x)
         block2out = self.block2(block1out)
         block3out = self.block3(block2out)
-
-        logging.info(f'block1out.shape:{block1out.shape}')
-        logging.info(f'block2out.shape:{block2out.shape}')
-        logging.info(f'block3out.shape:{block3out.shape}')
 
         # upconvolution
         block4out = self.block4(block3out)
         block5out = self.block5(block2out)
         block6out = self.block6(block1out)
 
-        logging.info(f'block4out.shape:{block4out.shape}')
-        logging.info(f'block5out.shape:{block5out.shape}')
-        logging.info(f'block6out.shape:{block6out.shape}')
-
         # concatenate results
         concatenated = torch.cat((block4out, block5out, block6out), dim=1)
 
-        logging.info(f'concatenated.shape:{concatenated.shape}')
-
         block7out = self.block7(concatenated)
 
-        logging.info(f'block7out.shape:{block7out.shape}')
+        if i == 0:
+            logging.info(f'block1out.shape:{block1out.shape}')
+            logging.info(f'block2out.shape:{block2out.shape}')
+            logging.info(f'block3out.shape:{block3out.shape}')
+            logging.info(f'block4out.shape:{block4out.shape}')
+            logging.info(f'block5out.shape:{block5out.shape}')
+            logging.info(f'block6out.shape:{block6out.shape}')
+            logging.info(f'concatenated.shape:{concatenated.shape}')
+            logging.info(f'block7out.shape:{block7out.shape}')
 
         return block7out
 
@@ -262,7 +260,7 @@ class EvaluationNetwork(nn.Module):
 
         )
 
-    def forward(self, x):
+    def forward(self, x, i):
         block1out = self.block1(x)
 
         logging.info(f'block1out:{block1out.shape}')

@@ -68,7 +68,7 @@ class Training:
                 logging.info(f'out.shape:{out.shape}')
 
             # calculate loss
-            loss = self.criterion.calculate_loss(out, targets)
+            loss = self.criterion(out, targets)
             train_loss += loss.item()
 
             # delete mini-batch data from device
