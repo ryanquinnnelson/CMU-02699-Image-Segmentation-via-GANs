@@ -3,10 +3,14 @@ Contains all Dataset objects customized to the data.
 """
 __author__ = 'ryanquinnnelson'
 
-from torch.utils.data import Dataset
+import logging
 import os
-from PIL import Image
 import random
+
+from torch.utils.data import Dataset
+
+from PIL import Image
+
 import torchvision.transforms as transforms
 
 
@@ -50,11 +54,13 @@ class ImageDataset(Dataset):
 
         img = Image.open(img_path).convert('RGB')
         target = Image.open(target_path).convert('RGB')
+
+        # standardize image size
         img = img.resize((775, 522), resample=Image.BILINEAR)  # standardize image size
         target = target.resize((775, 522), resample=Image.BILINEAR)  # standardize target size
 
-        # apply matching transformations to image and target
-        img, target = _apply_transformations(img, target)
+        # # apply matching transformations to image and target
+        # img, target = _apply_transformations(img, target)
 
         # convert to tensors
         tensor_img = self.transform(img)

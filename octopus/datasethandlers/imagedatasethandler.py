@@ -71,7 +71,8 @@ class ImageDatasetHandler:
         """
 
         # initialize dataset
-        dataset = self.dataset_class(self.train_dir, self.train_target_dir, self.train_transforms)
+        t = _compose_transforms(self.train_transforms)
+        dataset = self.dataset_class(self.train_dir, self.train_target_dir, t)
         logging.info(f'Loaded {len(dataset)} training images.')
         return dataset
 

@@ -73,14 +73,14 @@ class CnnBlock(nn.Module):
 # https://pytorch.org/docs/stable/generated/torch.nn.functional.interpolate.html
 class UpConvBlock(nn.Module):
 
-    def __init__(self, in_channels, out_channels, size):
+    def __init__(self, in_channels, out_channels, output_size):
         super().__init__()
 
         self.in_channels = in_channels
         self.out_channels = out_channels
 
         self.up_block = nn.Sequential(
-            nn.Upsample(size=size, mode='bilinear'),
+            nn.Upsample(size=output_size, mode='bilinear'),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True)
         )
@@ -170,16 +170,16 @@ class SegmentationNetwork(nn.Module):
             CnnBlock(1024, 1024)  # shortcut to up-conv3
         )
 
-        self.block4 = UpConvBlock(1024, 1024, input_size)
+        self.block4 = UpConvBlock(1024, 1024, (522, 775))
 
-        self.block5 = UpConvBlock(512, 512, input_size)
+        self.block5 = UpConvBlock(512, 512, (522, 775))
 
-        self.block6 = UpConvBlock(512, 512, input_size)
+        self.block6 = UpConvBlock(512, 512, (522, 775))
 
         self.block7 = nn.Sequential(
             CnnBlock(2048, 1024),
-            nn.Conv2d(1024, 2, kernel_size=1, stride=1, padding=1, bias=False),  # two classes
-            nn.Softmax(dim=2)  # third dimension is number of classes
+            nn.Conv2d(1024, 3, kernel_size=1, stride=1, padding=0, bias=False),  # two classes
+            nn.Softmax(dim=1)  # second dimension is number of classes
         )
 
     def forward(self, x):
@@ -201,7 +201,7 @@ class SegmentationNetwork(nn.Module):
         logging.info(f'block6out.shape:{block6out.shape}')
 
         # concatenate results
-        concatenated = torch.cat((block4out, block5out, block6out))
+        concatenated = torch.cat((block4out, block5out, block6out), dim=1)
 
         logging.info(f'concatenated.shape:{concatenated.shape}')
 

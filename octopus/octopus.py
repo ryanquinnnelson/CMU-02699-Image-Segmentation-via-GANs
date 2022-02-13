@@ -156,7 +156,7 @@ class Octopus:
         """
         logging.info('octopus is running the pipeline...')
 
-        # run epochs
+        # run training epochs for SN
         self.phasehandler.process_epochs(self.model1, self.optimizer1, self.scheduler1, self.training, self.evaluation,
                                          self.testing)
 

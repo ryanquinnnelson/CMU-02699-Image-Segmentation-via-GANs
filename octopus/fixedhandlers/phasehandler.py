@@ -93,8 +93,8 @@ class PhaseHandler:
             # validate
             val_loss, val_metric = evaluation.evaluate_model(epoch, self.num_epochs, model)
 
-            # testing
-            test_loss, test_metric = testing.test_model(epoch, self.num_epochs, model)
+            # # testing
+            # test_loss, test_metric = testing.test_model(epoch, self.num_epochs, model)
 
             # stats
             end = time.time()
