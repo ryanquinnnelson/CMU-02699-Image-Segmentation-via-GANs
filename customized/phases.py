@@ -53,7 +53,7 @@ class Training:
 
         # process mini-batches
         for i, (inputs, targets) in enumerate(self.train_loader):
-
+            logging.info(f'training batch:{i}')
             # prep
             optimizer.zero_grad()
             torch.cuda.empty_cache()
@@ -156,6 +156,8 @@ class Evaluation:
 
             # process mini-batches
             for i, (inputs, targets) in enumerate(self.val_loader):
+                logging.info(f'validation batch:{i}')
+
                 # prep
                 inputs, targets = self.devicehandler.move_data_to_device(model, inputs, targets)
 
