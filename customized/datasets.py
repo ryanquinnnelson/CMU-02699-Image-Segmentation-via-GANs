@@ -7,21 +7,20 @@ import logging
 import os
 import random
 
+import torch
 from torch.utils.data import Dataset
-
 from PIL import Image
-
 import torchvision.transforms as transforms
 
 
 def _apply_transformations(img, target):
     if random.random() > 0.5:
-        print('vflip')
+        # print('vflip')
         img = transforms.functional_pil.vflip(img)
         target = transforms.functional_pil.vflip(target)
 
     if random.random() > 0.5:
-        print('hflip')
+        # print('hflip')
         img = transforms.functional_pil.hflip(img)
         target = transforms.functional_pil.hflip(target)
 
@@ -59,16 +58,22 @@ class ImageDataset(Dataset):
         img = img.resize((775, 522), resample=Image.BILINEAR)  # standardize image size
         target = target.resize((775, 522), resample=Image.BILINEAR)  # standardize target size
 
-        # # apply matching transformations to image and target
-        # img, target = _apply_transformations(img, target)
+        # apply matching transformations to image and target
+        img, target = _apply_transformations(img, target)
 
         # convert to tensors
         tensor_img = self.transform(img)
         tensor_target = self.transform(target)
 
+        # keep only first channel because all three channels are given the same value
+        tensor_target_first_channel = tensor_target[0]
+
         # convert all nonzero target values to 1
         # nonzero values indicate segment
         # zero values indicate background
-        tensor_target[tensor_target != 0] = 1.0
+        tensor_target_first_channel[tensor_target_first_channel != 0] = 1.0
 
-        return tensor_img, tensor_target
+        # convert target to long datatype to indicate classes
+        tensor_target_first_channel = tensor_target_first_channel.to(torch.long)
+
+        return tensor_img, tensor_target_first_channel

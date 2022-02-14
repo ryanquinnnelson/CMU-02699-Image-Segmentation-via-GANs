@@ -58,9 +58,9 @@ class CnnBlock(nn.Module):
         self.cnn_block.apply(_init_weights)
 
     def forward(self, x):
-        logging.info(f'cnn_block_input:{x.shape}')
+        # logging.info(f'cnn_block_input:{x.shape}')
         x = self.cnn_block(x)
-        logging.info(f'cnn_block:{x.shape}')
+        # logging.info(f'cnn_block:{x.shape}')
         return x
 
 
@@ -89,9 +89,9 @@ class UpConvBlock(nn.Module):
         self.up_block.apply(_init_weights)
 
     def forward(self, x):
-        logging.info(f'up_block_input:{x.shape}')
+        # logging.info(f'up_block_input:{x.shape}')
         x = self.up_block(x)
-        logging.info(f'up_block:{x.shape}')
+        # logging.info(f'up_block:{x.shape}')
         return x
 
 
@@ -112,9 +112,9 @@ class LinearBlock(nn.Module):
         self.linear_block.apply(_init_weights)
 
     def forward(self, x):
-        logging.info(f'linear_block_input:{x.shape}')
+        # logging.info(f'linear_block_input:{x.shape}')
         x = self.linear_block(x)
-        logging.info(f'linear_block:{x.shape}')
+        # logging.info(f'linear_block:{x.shape}')
         return x
 
 
@@ -178,8 +178,8 @@ class SegmentationNetwork(nn.Module):
 
         self.block7 = nn.Sequential(
             CnnBlock(2048, 1024),
-            nn.Conv2d(1024, 3, kernel_size=1, stride=1, padding=0, bias=False),  # two classes
-            nn.Softmax(dim=1)  # second dimension is number of classes
+            nn.Conv2d(1024, 2, kernel_size=1, stride=1, padding=0, bias=False),  # 2 classes
+            nn.Softmax2d()
         )
 
     def forward(self, x, i):
@@ -193,7 +193,7 @@ class SegmentationNetwork(nn.Module):
         block6out = self.block6(block1out)
 
         # concatenate results
-        concatenated = torch.cat((block4out, block5out, block6out), dim=1)
+        concatenated = torch.cat((block4out, block5out, block6out), dim=1)  # channels are the second dimension
 
         block7out = self.block7(concatenated)
 
