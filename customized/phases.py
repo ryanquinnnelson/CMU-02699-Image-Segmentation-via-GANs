@@ -89,35 +89,25 @@ class Training:
 
 
 def _calculate_num_hits(i, inputs, out):
-    """
-    Calculate the number of accurate letters in the reconstructed feature vector after converting back to sequence.
 
-    :param i (int): Number of training epoch. Control when debugging output is produced.
-    :param inputs (torch.Tensor): VAE input. (feature_dim x 1)
-    :param out (torch.Tensor): VAE output. (feature_dim x 1)
-    :return (int): Number of accurate letters in the reconstructed feature vector after converting back to sequence.
-    """
     batch_size = len(inputs)
 
-    # one hot encoding uses 22 letters in its alphabet
-    # reshape so each record has 22 columns and m rows. Each row represents the one-hot encoding for a single letter.
-    out = out.cpu().detach().numpy().reshape((batch_size, -1, 22))
-    inputs = inputs.cpu().detach().numpy().reshape((batch_size, -1, 22))
+    # convert to class labels
+    # convert out to class labels
+    labels_out = out.argmax(axis=0)
 
-    # convert one hot encoding to class labels
-    # for each row, get the index of the max column. This represents the letter selected for this sequence position.
-    labels_out = np.argmax(out, axis=2)
-    labels_inputs = np.argmax(inputs, axis=2)
+    # convert 2D images into 1D vectors
+    out = labels_out.cpu().detach().numpy().reshape((batch_size, -1))
+    labels_inputs = inputs.cpu().detach().numpy().reshape((batch_size, -1))
 
     # compare predictions against actual
     # compare lists of max indices and find the number that match
     n_hits = np.sum(labels_out == labels_inputs)
 
     if i == 0:
-        logging.info(f'out.shape:{out.shape}')
-        logging.info(f'inputs.shape:{inputs.shape}')
+        logging.info(f'reshaped out.shape:{out.shape}')
+        logging.info(f'reshaped labels_inputs.shape:{labels_inputs.shape}')
         logging.info(f'labels_out.shape:{labels_out.shape}')
-        logging.info(f'labels_inputs.shape:{labels_inputs.shape}')
         logging.info(f'n_hits:{n_hits}')
 
     return n_hits
