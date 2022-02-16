@@ -90,23 +90,22 @@ class Training:
 
 def _calculate_num_hits(i, inputs, out):
 
-    batch_size = len(inputs)
-
     # convert to class labels
     # convert out to class labels
     labels_out = out.argmax(axis=0)
 
-    # convert 2D images into 1D vectors
-    out = labels_out.cpu().detach().numpy().reshape((batch_size, -1))
-    labels_inputs = inputs.cpu().detach().numpy().reshape((batch_size, -1))
-
     # compare predictions against actual
+    compare = inputs == labels_out
+
+    # # convert 2D images into 1D vectors
+    # out = labels_out.cpu().detach().numpy().reshape((batch_size, -1))
+    # labels_inputs = inputs.cpu().detach().numpy().reshape((batch_size, -1))
+
     # compare lists of max indices and find the number that match
-    n_hits = np.sum(labels_out == labels_inputs)
+    n_hits = np.sum(compare.detach().numpy())
 
     if i == 0:
         logging.info(f'reshaped out.shape:{out.shape}')
-        logging.info(f'reshaped labels_inputs.shape:{labels_inputs.shape}')
         logging.info(f'labels_out.shape:{labels_out.shape}')
         logging.info(f'n_hits:{n_hits}')
 
@@ -174,7 +173,7 @@ class Evaluation:
                 val_loss += loss.item()
 
                 # calculate accuracy
-                num_hits += _calculate_num_hits(i, out, targets)
+                num_hits += _calculate_num_hits(i, targets, out)
 
                 # delete mini-batch from device
                 del inputs
