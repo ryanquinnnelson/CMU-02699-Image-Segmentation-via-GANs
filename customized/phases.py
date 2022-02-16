@@ -164,6 +164,11 @@ class Evaluation:
                 # compute forward pass
                 out = model.forward(inputs, i)
 
+                if i == 0:
+                    logging.info(f'inputs.shape:{inputs.shape}')
+                    logging.info(f'targets.shape:{targets.shape}')
+                    logging.info(f'out.shape:{out.shape}')
+
                 # calculate loss
                 loss = self.criterion(out, targets)
                 val_loss += loss.item()

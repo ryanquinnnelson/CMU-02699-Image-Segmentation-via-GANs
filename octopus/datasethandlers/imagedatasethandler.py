@@ -85,9 +85,9 @@ class ImageDatasetHandler:
 
         if self.should_normalize_val:
             logging.info('Normalizing validation data to match normalization of training data...')
-            t = _compose_transforms(['ToTensor', 'Normalize'])
+            t = _compose_transforms(['Resize','ToTensor', 'Normalize'])
         else:
-            t = _compose_transforms(['ToTensor'])
+            t = _compose_transforms(['Resize','ToTensor'])
 
         # initialize dataset
         dataset = self.dataset_class(self.val_dir, self.val_target_dir, t)
@@ -102,9 +102,9 @@ class ImageDatasetHandler:
 
         if self.should_normalize_test:
             logging.info('Normalizing validation data to match normalization of training data...')
-            t = _compose_transforms(['ToTensor', 'Normalize'])
+            t = _compose_transforms(['Resize','ToTensor', 'Normalize'])
         else:
-            t = _compose_transforms(['ToTensor'])
+            t = _compose_transforms(['Resize','ToTensor'])
 
         # initialize dataset
         dataset = self.dataset_class(self.test_dir, self.test_target_dir, t)
