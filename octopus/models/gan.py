@@ -170,11 +170,11 @@ class SegmentationNetwork(nn.Module):
             CnnBlock(1024, 1024)  # shortcut to up-conv3
         )
 
-        self.block4 = UpConvBlock(1024, 1024, (522, 775))
+        self.block4 = UpConvBlock(1024, 1024, (224, 332))
 
-        self.block5 = UpConvBlock(512, 512, (522, 775))
+        self.block5 = UpConvBlock(512, 512, (224, 332))
 
-        self.block6 = UpConvBlock(512, 512, (522, 775))
+        self.block6 = UpConvBlock(512, 512, (224, 332))
 
         self.block7 = nn.Sequential(
             CnnBlock(2048, 1024),

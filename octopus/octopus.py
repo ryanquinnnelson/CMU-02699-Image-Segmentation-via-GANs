@@ -122,16 +122,16 @@ class Octopus:
         # initialize model
         self.model1, self.model2 = self.modelhandler.get_model()
         self.model1 = self.devicehandler.move_model_to_device(self.model1)  # move before initialize optimizer - Note 1
-        self.model2 = self.devicehandler.move_model_to_device(self.model2)
+        # self.model2 = self.devicehandler.move_model_to_device(self.model2)
         self.wandbconnector.watch(self.model1)
-        self.wandbconnector.watch(self.model2)
+        # self.wandbconnector.watch(self.model2)
 
         # initialize model components
         self.loss_func = self.criterionhandler.get_loss_function()
         self.optimizer1 = self.optimizerhandler.get_optimizer(self.model1)
         self.scheduler1 = self.schedulerhandler.get_scheduler(self.optimizer1)
-        self.optimizer2 = self.optimizerhandler.get_optimizer(self.model2)
-        self.scheduler2 = self.schedulerhandler.get_scheduler(self.optimizer2)
+        # self.optimizer2 = self.optimizerhandler.get_optimizer(self.model2)
+        # self.scheduler2 = self.schedulerhandler.get_scheduler(self.optimizer2)
 
         # load data
         self.train_loader, self.val_loader, self.test_loader = self.dataloaderhandler.load(self.inputhandler)

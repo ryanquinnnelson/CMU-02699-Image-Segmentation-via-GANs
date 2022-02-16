@@ -40,7 +40,7 @@ val_dir = /home/ubuntu/data/warwick/a
 val_target_dir = /home/ubuntu/data/warwick/a_anno
 test_dir = /home/ubuntu/data/warwick/b
 test_target_dir = /home/ubuntu/data/warwick/b_anno
-transforms_list = ToTensor
+transforms_list = Resize,ToTensor
 
 
 
@@ -54,7 +54,7 @@ output_dir = /home/ubuntu/output
 [dataloader]
 num_workers=8
 pin_memory=True
-batch_size=2
+batch_size=10
 
 
 [model]

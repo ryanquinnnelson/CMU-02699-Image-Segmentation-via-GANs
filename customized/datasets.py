@@ -61,7 +61,7 @@ class ImageDataset(Dataset):
         # apply matching transformations to image and target
         img, target = _apply_transformations(img, target)
 
-        # convert to tensors
+        # transform and convert to tensors
         tensor_img = self.transform(img)
         tensor_target = self.transform(target)
 

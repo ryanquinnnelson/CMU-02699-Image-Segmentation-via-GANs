@@ -8,7 +8,7 @@ import os
 import shutil
 
 import torch
-from pynvml import *
+# from pynvml import *
 
 
 def create_directory(path):

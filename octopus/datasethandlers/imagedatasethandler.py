@@ -7,7 +7,7 @@ import logging
 
 import numpy as np
 import torchvision.transforms as transforms
-
+import PIL.Image as Image
 
 def _compose_transforms(transforms_list):
     """
@@ -25,7 +25,8 @@ def _compose_transforms(transforms_list):
         elif each == 'ToTensor':
             t_list.append(transforms.ToTensor())
         elif each == 'Resize':
-            t_list.append(transforms.Resize((775, 522), interpolation='bilinear'))
+            # t_list.append(transforms.Resize((775, 522), interpolation='bilinear'))
+            t_list.append(transforms.Resize(224, interpolation=Image.BILINEAR))
 
     composition = transforms.Compose(t_list)
 
