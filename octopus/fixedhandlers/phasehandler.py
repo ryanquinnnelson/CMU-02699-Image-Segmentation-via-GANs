@@ -12,7 +12,7 @@ class PhaseHandler:
     Defines an object to manage training phases.
     """
 
-    def __init__(self, num_epochs, outputhandler, devicehandler, statshandler, checkpointhandler,
+    def __init__(self, num_epochs, use_gan, outputhandler, devicehandler, statshandler, checkpointhandler,
                  schedulerhandler, wandbconnector, formatter, load_from_checkpoint, checkpoint_file=None):
         """
         Initialize PhaseHandler. Set the first epoch to 1.
@@ -34,6 +34,7 @@ class PhaseHandler:
         self.checkpoint_file = checkpoint_file
         self.first_epoch = 1
         self.num_epochs = num_epochs
+        self.use_gan = use_gan
 
         # handlers
         self.outputhandler = outputhandler
@@ -68,7 +69,7 @@ class PhaseHandler:
         # set which epoch to start from
         self.first_epoch = checkpoint['next_epoch']
 
-    def process_epochs(self, model, optimizer, scheduler, training, evaluation, testing):
+    def process_epochs(self, g_model, g_optimizer, g_scheduler, d_model, d_optimizer, d_scheduler, training, evaluation, testing):
         """
         Run training phases for all epochs. Load model from checkpoint first if necessary and submit all previous
         stats to wandb.
@@ -77,7 +78,7 @@ class PhaseHandler:
 
         # load checkpoint if necessary
         if self.load_from_checkpoint:
-            self._load_checkpoint(model, optimizer, scheduler)
+            self._load_checkpoint(g_model, g_optimizer, g_scheduler)
 
             # submit old stats to wandb to align with other runs
             self.statshandler.report_previous_stats(self.wandbconnector)
@@ -88,26 +89,27 @@ class PhaseHandler:
             start = time.time()
 
             # train
-            train_loss = training.train_model(epoch, self.num_epochs, model, optimizer)
+            train_loss = training.train_model(epoch, self.num_epochs, g_model, g_optimizer, d_model, d_optimizer, self.use_gan)
 
             # validate
-            val_loss, val_metric, iou_score = evaluation.evaluate_model(epoch, self.num_epochs, model)
+            val_loss, val_metric, iou_score = evaluation.evaluate_model(epoch, self.num_epochs, g_model, d_model)
 
             # # testing
             # test_loss, test_metric = testing.test_model(epoch, self.num_epochs, model)
 
             # stats
             end = time.time()
-            lr = optimizer.state_dict()["param_groups"][0]["lr"]
+            lr = g_optimizer.state_dict()["param_groups"][0]["lr"]
             self.statshandler.collect_stats(epoch, lr, train_loss, val_loss, val_metric, iou_score, start, end)
             self.statshandler.report_stats(self.wandbconnector)
 
             # scheduler
-            self.schedulerhandler.update_scheduler(scheduler, self.statshandler.stats)
+            self.schedulerhandler.update_scheduler(g_scheduler, self.statshandler.stats)
+            self.schedulerhandler.update_scheduler(d_scheduler, self.statshandler.stats)
 
             # save model checkpoint
             if epoch % 5 == 0:
-                self.checkpointhandler.save(model, optimizer, scheduler, epoch + 1, self.statshandler.stats)
+                self.checkpointhandler.save(g_model, g_optimizer, g_scheduler, epoch + 1, self.statshandler.stats)
 
             # check if early stopping criteria is met
             if self.statshandler.stopping_criteria_is_met(epoch, self.wandbconnector):

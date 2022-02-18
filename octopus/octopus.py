@@ -120,18 +120,19 @@ class Octopus:
 
         logging.info('octopus is initializing pipeline components...')
         # initialize model
-        self.model1, self.model2 = self.modelhandler.get_model()
-        self.model1 = self.devicehandler.move_model_to_device(self.model1)  # move before initialize optimizer - Note 1
-        # self.model2 = self.devicehandler.move_model_to_device(self.model2)
-        self.wandbconnector.watch(self.model1)
-        # self.wandbconnector.watch(self.model2)
+        self.g_model, self.d_model = self.modelhandler.get_model()
+        self.g_model = self.devicehandler.move_model_to_device(
+            self.g_model)  # move before initialize optimizer - Note 1
+        self.d_model = self.devicehandler.move_model_to_device(self.d_model)
+        self.wandbconnector.watch(self.g_model)
+        self.wandbconnector.watch(self.d_model)
 
         # initialize model components
         self.loss_func = self.criterionhandler.get_loss_function()
-        self.optimizer1 = self.optimizerhandler.get_optimizer(self.model1)
-        self.scheduler1 = self.schedulerhandler.get_scheduler(self.optimizer1)
-        # self.optimizer2 = self.optimizerhandler.get_optimizer(self.model2)
-        # self.scheduler2 = self.schedulerhandler.get_scheduler(self.optimizer2)
+        self.g_optimizer = self.optimizerhandler.get_optimizer(self.g_model)
+        self.g_scheduler = self.schedulerhandler.get_scheduler(self.g_optimizer)
+        self.d_optimizer = self.optimizerhandler.get_optimizer(self.d_model)
+        self.d_scheduler = self.schedulerhandler.get_scheduler(self.d_optimizer)
 
         # load data
         self.train_loader, self.val_loader, self.test_loader = self.dataloaderhandler.load(self.inputhandler)
@@ -157,8 +158,9 @@ class Octopus:
         logging.info('octopus is running the pipeline...')
 
         # run training epochs for SN
-        self.phasehandler.process_epochs(self.model1, self.optimizer1, self.scheduler1, self.training, self.evaluation,
-                                         self.testing)
+        self.phasehandler.process_epochs(self.g_model, self.g_optimizer, self.g_scheduler,
+                                         self.d_model, self.d_optimizer, self.d_scheduler,
+                                         self.training, self.evaluation, self.testing)
 
         logging.info('octopus has finished running the pipeline.')
 
@@ -329,6 +331,7 @@ def initialize_fixed_handlers(config, wandbconnector):
         checkpoint_file = None
 
     phasehandler = PhaseHandler(config['hyperparameters'].getint('num_epochs'),
+                                config['hyperparameters'].getboolean('use_gan'),
                                 outputhandler,
                                 devicehandler,
                                 statshandler,
