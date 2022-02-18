@@ -89,7 +89,7 @@ class PhaseHandler:
             start = time.time()
 
             # train
-            train_loss = training.train_model(epoch, self.num_epochs, g_model, g_optimizer, d_model, d_optimizer, self.use_gan)
+            g_train_loss, d_train_loss = training.train_model(epoch, self.num_epochs, g_model, g_optimizer, d_model, d_optimizer, self.use_gan)
 
             # validate
             val_loss, val_metric, iou_score = evaluation.evaluate_model(epoch, self.num_epochs, g_model, d_model)
@@ -100,7 +100,7 @@ class PhaseHandler:
             # stats
             end = time.time()
             lr = g_optimizer.state_dict()["param_groups"][0]["lr"]
-            self.statshandler.collect_stats(epoch, lr, train_loss, val_loss, val_metric, iou_score, start, end)
+            self.statshandler.collect_stats(epoch, lr, g_train_loss, d_train_loss, val_loss, val_metric, iou_score, start, end)
             self.statshandler.report_stats(self.wandbconnector)
 
             # scheduler

@@ -8,20 +8,29 @@ import warnings
 
 import numpy as np
 import torch
+import torch.nn as nn
 
 warnings.filterwarnings('ignore')
 
 
 def _combine_input_and_map(input, map):
-    return 0.0
+    combined = torch.cat((input, map), dim=1)
+    return combined
 
 
 def _d_loss(pred, annotated=True):
-    return 0.0
+    criterion = nn.BCELoss()
 
+    n = len(pred)
 
-def _g_loss(pred):
-    return 0.0
+    if annotated:
+        targets = torch.ones(n)  # targets should be 1.0
+    else:
+        targets = torch.zeros(n)  # targets should be 0.0
+
+    loss = criterion(pred, targets)
+
+    return loss
 
 
 class Training:
@@ -74,14 +83,18 @@ class Training:
             g_loss = self.criterion(out, targets)
             g_train_loss += g_loss.item()
 
-            if use_gan:
+            if use_gan and epoch >= 10:
                 # set sigma based on the epoch
                 sigma = 0.1
-                sigma += (epoch / 30000)  # add more weight each time, at 30000 sigma should be close to 1
+                sigma += (epoch / 30000)  # add more weight each time, at 30000 epochs, sigma should be close to 1
 
                 # select subset of mini-batch to be unannotated vs annotated
-                unannotated_idx = np.random.choice(len(inputs), size=int(len(inputs)/2), replace=False)
+                unannotated_idx = np.random.choice(len(inputs), size=int(len(inputs) / 2), replace=False)
                 annotated_idx = np.delete(np.array([k for k in range(len(inputs))]), unannotated_idx)
+
+                if i == 0:
+                    logging.info(f'unannotated_idx:{unannotated_idx}')
+                    logging.info(f'annotated_idx:{annotated_idx}')
 
                 # compute forward pass on discriminator using unannotated data
                 unannotated_inputs = inputs[unannotated_idx]
@@ -110,8 +123,8 @@ class Training:
                 fake_pred = d_model(i, d_input)
 
                 # g_loss based on discriminator predictions
-                # if discriminator predicts some as fake, generator not doing good enough job
-                total_g_loss = _g_loss(fake_pred)
+                # if discriminator predicts unannotated correctly, generator not doing good enough job
+                total_g_loss = g_loss + sigma * _d_loss(fake_pred, annotated=True)
             else:
                 total_g_loss = g_loss
 
@@ -127,8 +140,9 @@ class Training:
 
         # calculate average loss across all mini-batches
         g_train_loss /= len(self.train_loader)
+        d_train_loss /= len(self.train_loader)
 
-        return g_train_loss
+        return g_train_loss, d_train_loss
 
 
 def _calculate_num_hits(i, targets, out):

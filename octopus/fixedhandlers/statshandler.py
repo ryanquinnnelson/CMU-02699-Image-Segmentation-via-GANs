@@ -27,7 +27,8 @@ class StatsHandler:
         self.stats = {'epoch': [],
                       'lr': [],
                       'runtime': [],
-                      'train_loss': [],
+                      'g_train_loss': [],
+                      'd_train_loss': [],
                       'val_loss': [],
                       'iou_score': [],
                       val_metric_name: []}
@@ -134,7 +135,7 @@ class StatsHandler:
         wandbconnector.log_stats(epoch_stats_dict)
         logging.info(f'stats:{epoch_stats_dict}')
 
-    def collect_stats(self, epoch, lr, train_loss, val_loss, val_metric, iou_score, start, end):
+    def collect_stats(self, epoch, lr, g_train_loss,  d_train_loss, val_loss, val_metric, iou_score, start, end):
         """
         Collect and store stats for a given epoch of model training.
         Args:
@@ -159,7 +160,8 @@ class StatsHandler:
         self.stats['epoch'].append(epoch)
         self.stats['lr'].append(lr)
         self.stats['runtime'].append(runtime)
-        self.stats['train_loss'].append(train_loss)
+        self.stats['g_train_loss'].append(g_train_loss)
+        self.stats['d_train_loss'].append(d_train_loss)
         self.stats['val_loss'].append(val_loss)
         self.stats[self.val_metric_name].append(val_metric)
         self.stats['iou_score'].append(iou_score)
