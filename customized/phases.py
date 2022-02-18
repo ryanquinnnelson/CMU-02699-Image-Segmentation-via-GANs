@@ -77,27 +77,27 @@ class Training:
             if use_gan:
                 # set sigma based on the epoch
                 sigma = 0.1
-                sigma += (epoch / 30000)
+                sigma += (epoch / 30000)  # add more weight each time, at 30000 sigma should be close to 1
 
                 # select subset of mini-batch to be unannotated vs annotated
                 unannotated_idx = np.random.choice(len(inputs), size=int(len(inputs)/2), replace=False)
                 annotated_idx = np.delete(np.array([k for k in range(len(inputs))]), unannotated_idx)
 
-                # compute forward pass on discriminator using fake data
+                # compute forward pass on discriminator using unannotated data
                 unannotated_inputs = inputs[unannotated_idx]
                 unannotated_out = out[unannotated_idx]
                 d_input = _combine_input_and_map(unannotated_inputs, unannotated_out)
                 unannotated_pred = d_model(i, d_input.detach())
                 d_loss_unannotated = _d_loss(unannotated_pred, annotated=False)
 
-                # compute forward pass on discriminator using real data
+                # compute forward pass on discriminator using annotated data
                 annotated_inputs = inputs[annotated_idx]
                 annotated_targets = targets[annotated_idx]
                 d_input = _combine_input_and_map(annotated_inputs, annotated_targets)
                 annotated_pred = d_model(i, d_input.detach())
                 d_loss_annotated = _d_loss(annotated_pred, annotated=True)
 
-                # calculate total discriminator loss for fake and real
+                # calculate total discriminator loss for unannotated and annotated data
                 d_loss = sigma * (d_loss_unannotated + d_loss_annotated)
                 d_loss.backward()
                 d_train_loss += d_loss.item()
@@ -105,13 +105,13 @@ class Training:
                 # update discriminator weights
                 d_optimizer.step()
 
-                # compute forward pass on updated discriminator using fake data
-                d_input = _combine_input_and_map(input, out)
+                # compute forward pass on updated discriminator using only unannotated data
+                d_input = _combine_input_and_map(inputs, out)
                 fake_pred = d_model(i, d_input)
 
                 # g_loss based on discriminator predictions
                 # if discriminator predicts some as fake, generator not doing good enough job
-                total_g_loss = g_loss(fake_pred)
+                total_g_loss = _g_loss(fake_pred)
             else:
                 total_g_loss = g_loss
 
