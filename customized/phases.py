@@ -79,14 +79,22 @@ class Training:
                 sigma = 0.1
                 sigma += (epoch / 30000)
 
+                # select subset of mini-batch to be unannotated vs annotated
+                unannotated_idx = np.random.choice(len(inputs), size=int(len(inputs)/2), replace=False)
+                annotated_idx = np.delete(np.array([k for k in range(len(inputs))]), unannotated_idx)
+
                 # compute forward pass on discriminator using fake data
-                d_input = _combine_input_and_map(input, out)
-                unannotated_pred = d_model(i, d_input)
+                unannotated_inputs = inputs[unannotated_idx]
+                unannotated_out = out[unannotated_idx]
+                d_input = _combine_input_and_map(unannotated_inputs, unannotated_out)
+                unannotated_pred = d_model(i, d_input.detach())
                 d_loss_unannotated = _d_loss(unannotated_pred, annotated=False)
 
                 # compute forward pass on discriminator using real data
-                d_input = _combine_input_and_map(inputs, targets)
-                annotated_pred = d_model(i, d_input)
+                annotated_inputs = inputs[annotated_idx]
+                annotated_targets = targets[annotated_idx]
+                d_input = _combine_input_and_map(annotated_inputs, annotated_targets)
+                annotated_pred = d_model(i, d_input.detach())
                 d_loss_annotated = _d_loss(annotated_pred, annotated=True)
 
                 # calculate total discriminator loss for fake and real
