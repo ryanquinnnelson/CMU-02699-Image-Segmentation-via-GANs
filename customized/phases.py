@@ -88,28 +88,43 @@ class Training:
         return train_loss
 
 
-def _calculate_num_hits(i, inputs, out):
-
+def _calculate_num_hits(i, targets, out):
     # convert to class labels
     # convert out to class labels
-    labels_out = out.argmax(axis=0)
+    labels_out = out.argmax(axis=1)
+    if i == 0:
+        logging.info(f'labels_out.shape:{labels_out.shape}')
 
     # compare predictions against actual
-    compare = inputs == labels_out
+    compare = targets == labels_out
 
     # # convert 2D images into 1D vectors
     # out = labels_out.cpu().detach().numpy().reshape((batch_size, -1))
     # labels_inputs = inputs.cpu().detach().numpy().reshape((batch_size, -1))
 
     # compare lists of max indices and find the number that match
-    n_hits = np.sum(compare.detach().numpy())
+    n_hits = np.sum(compare.cpu().detach().numpy())
 
     if i == 0:
-        logging.info(f'reshaped out.shape:{out.shape}')
-        logging.info(f'labels_out.shape:{labels_out.shape}')
         logging.info(f'n_hits:{n_hits}')
 
     return n_hits
+
+
+# https://towardsdatascience.com/intersection-over-union-iou-calculation-for-evaluating-an-image-segmentation-model-8b22e2e84686
+def _calculate_iou_score(i, targets, out):
+    targets = targets.cpu().detach().numpy()
+
+    # convert to class labels
+    # convert out to class labels
+    labels_out = out.argmax(axis=1)
+    labels_out = labels_out.cpu().detach().numpy()
+
+    intersection = np.logical_and(targets, labels_out)
+    union = np.logical_or(targets, labels_out)
+
+    iou_score = np.sum(intersection) / np.sum(union)
+    return iou_score
 
 
 class Evaluation:
@@ -146,7 +161,8 @@ class Evaluation:
         logging.info(f'Running epoch {epoch}/{num_epochs} of evaluation...')
 
         val_loss = 0
-        num_hits = 0
+        actual_hits = 0
+        score = 0
 
         with torch.no_grad():  # deactivate autograd engine to improve efficiency
 
@@ -173,17 +189,20 @@ class Evaluation:
                 val_loss += loss.item()
 
                 # calculate accuracy
-                num_hits += _calculate_num_hits(i, targets, out)
+                actual_hits += _calculate_num_hits(i, targets, out)
+                score += _calculate_iou_score(i, targets, out)
 
                 # delete mini-batch from device
                 del inputs
                 del targets
 
             # calculate evaluation metrics
+            possible_hits = (len(self.val_loader.dataset) * 224 * 332)
             val_loss /= len(self.val_loader)  # average per mini-batch
-            val_acc = num_hits / len(self.val_loader.dataset)
+            val_acc = actual_hits / possible_hits
+            iou_score = score / len(self.val_loader.dataset)
 
-            return val_loss, val_acc
+            return val_loss, val_acc, iou_score
 
 
 class Testing:
