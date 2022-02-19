@@ -53,14 +53,14 @@ class CheckpointHandler:
 
         helper.create_directory(self.checkpoint_dir)
 
-    def save(self, model, optimizer, scheduler, next_epoch, stats):
+    def save(self, g_model, g_optimizer, g_scheduler, d_model, d_optimizer, d_scheduler, next_epoch, stats):
         """
         Save current model environment to a checkpoint.
 
         Args:
-            model (nn.Module): model to save
-            optimizer (nn.optim): optimizer to save
-            scheduler (nn.optim): scheduler to save
+            g_model (nn.Module): model to save
+            g_optimizer (nn.optim): optimizer to save
+            g_scheduler (nn.optim): scheduler to save
             next_epoch (int): next epoch to execute if this model is restored
             stats (Dict): dictionary of statistics for all epochs collected during model training to this point
 
@@ -73,25 +73,30 @@ class CheckpointHandler:
 
         # build state dictionary
         checkpoint = {
-            'model_state_dict': model.state_dict(),
-            'optimizer_state_dict': optimizer.state_dict(),
-            'scheduler_state_dict': scheduler.state_dict(),
+            'g_model_state_dict': g_model.state_dict(),
+            'g_optimizer_state_dict': g_optimizer.state_dict(),
+            'g_scheduler_state_dict': g_scheduler.state_dict(),
+
+            'd_model_state_dict': d_model.state_dict(),
+            'd_optimizer_state_dict': d_optimizer.state_dict(),
+            'd_scheduler_state_dict': d_scheduler.state_dict(),
+
             'next_epoch': next_epoch,
             'stats': stats
         }
 
         torch.save(checkpoint, filename)
 
-    def load(self, filename, device, model, optimizer, scheduler):
+    def load(self, filename, device, g_model, g_optimizer, g_scheduler, d_model, d_optimizer, d_scheduler):
         """
         Load a previously saved model environment from a checkpoint file, mapping the load based on the device.
 
         Args:
             filename (str): fully-qualified filename of checkpoint file
             device (torch.device): device on which model was previously running
-            model (nn.Module): model to update based on checkpoint
-            optimizer (nn.optim): optimizer to update based on checkpoint
-            scheduler (nn.optim): scheduler to update based on checkpoint
+            g_model (nn.Module): model to update based on checkpoint
+            g_optimizer (nn.optim): optimizer to update based on checkpoint
+            g_scheduler (nn.optim): scheduler to update based on checkpoint
 
         Returns: checkpoint object
 
@@ -100,8 +105,12 @@ class CheckpointHandler:
         checkpoint = torch.load(filename, map_location=device)
 
         # reload saved states
-        model.load_state_dict(checkpoint['model_state_dict'])
-        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+        g_model.load_state_dict(checkpoint['g_model_state_dict'])
+        g_optimizer.load_state_dict(checkpoint['g_optimizer_state_dict'])
+        g_scheduler.load_state_dict(checkpoint['g_scheduler_state_dict'])
+
+        d_model.load_state_dict(checkpoint['d_model_state_dict'])
+        d_optimizer.load_state_dict(checkpoint['d_optimizer_state_dict'])
+        d_scheduler.load_state_dict(checkpoint['d_scheduler_state_dict'])
 
         return checkpoint

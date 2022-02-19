@@ -47,21 +47,22 @@ class PhaseHandler:
         # formatter for test output
         self.formatter = formatter
 
-    def _load_checkpoint(self, model, optimizer, scheduler):
+    def _load_checkpoint(self, g_model, g_optimizer, g_scheduler, d_model, d_optimizer, d_scheduler):
         """
         Load model environment from previous checkpoint. Replace stats dictionary with stats dictionary recovered
         from checkpoint and update first epoch to next epoch value recovered from checkpoint.
 
         Args:
-            model (nn.Module): model to update based on checkpoint
-            optimizer (nn.optim): optimizer to update based on checkpoint
-            scheduler (nn.optim): scheduler to update based on checkpoint
+            g_model (nn.Module): model to update based on checkpoint
+            g_optimizer (nn.optim): optimizer to update based on checkpoint
+            g_scheduler (nn.optim): scheduler to update based on checkpoint
 
         Returns: None
 
         """
         device = self.devicehandler.get_device()
-        checkpoint = self.checkpointhandler.load(self.checkpoint_file, device, model, optimizer, scheduler)
+        checkpoint = self.checkpointhandler.load(self.checkpoint_file, device, g_model, g_optimizer, g_scheduler,
+                                                 d_model, d_optimizer, d_scheduler)
 
         # restore stats
         self.statshandler.stats = checkpoint['stats']
@@ -69,7 +70,8 @@ class PhaseHandler:
         # set which epoch to start from
         self.first_epoch = checkpoint['next_epoch']
 
-    def process_epochs(self, g_model, g_optimizer, g_scheduler, d_model, d_optimizer, d_scheduler, training, evaluation, testing):
+    def process_epochs(self, g_model, g_optimizer, g_scheduler, d_model, d_optimizer, d_scheduler, training, evaluation,
+                       testing):
         """
         Run training phases for all epochs. Load model from checkpoint first if necessary and submit all previous
         stats to wandb.
@@ -78,7 +80,7 @@ class PhaseHandler:
 
         # load checkpoint if necessary
         if self.load_from_checkpoint:
-            self._load_checkpoint(g_model, g_optimizer, g_scheduler)
+            self._load_checkpoint(g_model, g_optimizer, g_scheduler, d_model, d_optimizer, d_scheduler)
 
             # submit old stats to wandb to align with other runs
             self.statshandler.report_previous_stats(self.wandbconnector)
@@ -89,7 +91,8 @@ class PhaseHandler:
             start = time.time()
 
             # train
-            g_train_loss, d_train_loss = training.train_model(epoch, self.num_epochs, g_model, g_optimizer, d_model, d_optimizer, self.use_gan)
+            g_train_loss, d_train_loss = training.train_model(epoch, self.num_epochs, g_model, g_optimizer, d_model,
+                                                              d_optimizer, self.use_gan)
 
             # validate
             val_loss, val_metric, iou_score = evaluation.evaluate_model(epoch, self.num_epochs, g_model, d_model)
@@ -100,7 +103,8 @@ class PhaseHandler:
             # stats
             end = time.time()
             lr = g_optimizer.state_dict()["param_groups"][0]["lr"]
-            self.statshandler.collect_stats(epoch, lr, g_train_loss, d_train_loss, val_loss, val_metric, iou_score, start, end)
+            self.statshandler.collect_stats(epoch, lr, g_train_loss, d_train_loss, val_loss, val_metric, iou_score,
+                                            start, end)
             self.statshandler.report_stats(self.wandbconnector)
 
             # scheduler
@@ -109,7 +113,8 @@ class PhaseHandler:
 
             # save model checkpoint
             if epoch % 5 == 0:
-                self.checkpointhandler.save(g_model, g_optimizer, g_scheduler, epoch + 1, self.statshandler.stats)
+                self.checkpointhandler.save(g_model, g_optimizer, g_scheduler, d_model, d_optimizer, d_scheduler,
+                                            epoch + 1, self.statshandler.stats)
 
             # check if early stopping criteria is met
             if self.statshandler.stopping_criteria_is_met(epoch, self.wandbconnector):

@@ -71,7 +71,7 @@ checkpoint_file = /data/checkpoints/zhang_sn_005.checkpoint.10.pt
 
 
 [hyperparameters]
-num_epochs = 30
+num_epochs = 60
 criterion_type=CrossEntropyLoss
 criterion_kwargs=use_burn_in=False
 optimizer_type=Adam
