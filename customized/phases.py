@@ -56,6 +56,8 @@ class Training:
         logging.info(f'Running epoch {epoch}/{num_epochs} of training...')
 
         g_train_loss = 0
+        d_train_loss_unannotated = 0
+        d_train_loss_annotated = 0
         d_train_loss = 0
 
         # Set model in 'Training mode'
@@ -83,10 +85,10 @@ class Training:
             g_loss = self.criterion(out, targets)
             g_train_loss += g_loss.item()
 
-            if use_gan and epoch >= 10:
+            if use_gan and epoch >= 30:
                 # set sigma based on the epoch
                 sigma = 0.1
-                sigma += (epoch / 30000)  # add more weight each time, at 30000 epochs, sigma should be close to 1
+                sigma += (epoch / 300)  # add more weight each time, at 300 epochs, sigma should be close to 1
 
                 # select subset of mini-batch to be unannotated vs annotated
                 unannotated_idx = np.random.choice(len(inputs), size=int(len(inputs) / 2), replace=False)
@@ -109,6 +111,7 @@ class Training:
                 if i == 0:
                     logging.info(f'unannotated_pred:{unannotated_pred}')
                 d_loss_unannotated = _d_loss(unannotated_pred, annotated=False)
+                d_train_loss_unannotated += d_loss_unannotated
 
                 # compute forward pass on discriminator using annotated data
                 annotated_inputs = inputs[annotated_idx]
@@ -123,6 +126,7 @@ class Training:
                 if i == 0:
                     logging.info(f'annotated_pred:{annotated_pred}')
                 d_loss_annotated = _d_loss(annotated_pred, annotated=True)
+                d_train_loss_annotated += d_loss_annotated
 
                 # calculate total discriminator loss for unannotated and annotated data
                 d_loss = sigma * (d_loss_unannotated + d_loss_annotated)
@@ -157,7 +161,7 @@ class Training:
         g_train_loss /= len(self.train_loader)
         d_train_loss /= len(self.train_loader)
 
-        return g_train_loss, d_train_loss
+        return g_train_loss, d_train_loss, d_train_loss_unannotated, d_train_loss_annotated
 
 
 def _calculate_num_hits(i, targets, out):
