@@ -252,20 +252,34 @@ class EvaluationNetwork(nn.Module):
         self.block2 = nn.Sequential(
 
             nn.Flatten(),  # need to convert 2d to 1d
-            LinearBlock(512, 256),
-            LinearBlock(256, 128),
-            LinearBlock(128, 64),
-            nn.Linear(64, 1),  # or 2?
-            nn.Sigmoid()
+
 
         )
 
+        self.block3 = nn.Sequential(
+            LinearBlock(168960, 256),  # 512*15*22
+            LinearBlock(256, 128),
+            LinearBlock(128, 64),
+            nn.Linear(64, 1),  # binary classes
+            nn.Sigmoid()
+        )
+
     def forward(self, x, i):
+        if i == 0:
+            logging.info(f'x:{x.shape}')
+
         block1out = self.block1(x)
 
-        logging.info(f'block1out:{block1out.shape}')
+        if i == 0:
+            logging.info(f'block1out:{block1out.shape}')
         block2out = self.block2(block1out)
 
-        logging.info(f'block2out:{block2out.shape}')
+        if i == 0:
+            logging.info(f'block2out:{block2out.shape}')
 
-        return block2out
+        block3out = self.block3(block2out)
+
+        if i == 0:
+            logging.info(f'block3out:{block3out.shape}')
+
+        return block3out

@@ -19,11 +19,11 @@ class GanHandler:
 
     def get_model(self):
 
-        model1, model2 = None, None
+        generator, discriminator = None, None
 
         if self.model_type == 'ZhangGAN':
-            model1 = gan.SegmentationNetwork(in_features=3, input_size=self.input_size)
-            # model2 = gan.EvaluationNetwork(self.input_size)
-        logging.info(f'Model1 initialized:\n{model1}')
-        # logging.info(f'Model2 initialized:\n{model2}')
-        return model1, None
+            generator = gan.SegmentationNetwork(in_features=3, input_size=self.input_size)
+            discriminator = gan.EvaluationNetwork(self.input_size)
+        logging.info(f'Model1 initialized:\n{generator}')
+        logging.info(f'Model2 initialized:\n{discriminator}')
+        return generator, discriminator

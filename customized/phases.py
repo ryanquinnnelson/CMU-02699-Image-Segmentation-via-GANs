@@ -28,7 +28,7 @@ def _d_loss(pred, annotated=True):
     else:
         targets = torch.zeros(n)  # targets should be 0.0
 
-    loss = criterion(pred, targets)
+    loss = criterion(pred.squeeze(-1).cpu(), targets)  # make same dimensions
 
     return loss
 
@@ -98,16 +98,30 @@ class Training:
 
                 # compute forward pass on discriminator using unannotated data
                 unannotated_inputs = inputs[unannotated_idx]
-                unannotated_out = out[unannotated_idx]
-                d_input = _combine_input_and_map(unannotated_inputs, unannotated_out)
-                unannotated_pred = d_model(i, d_input.detach())
+                unannotated_out = out[unannotated_idx, 0, :, :]  # keep only 1 class to match target shape
+                if i == 0:
+                    logging.info(f'unannotated_inputs.shape:{unannotated_inputs.shape}')
+                    logging.info(f'unannotated_out.shape:{unannotated_out.shape}')
+                d_input = _combine_input_and_map(unannotated_inputs, unannotated_out.unsqueeze(1))
+                if i == 0:
+                    logging.info(f'd_input.shape:{d_input.shape}')
+                unannotated_pred = d_model(d_input.detach(), i)
+                if i == 0:
+                    logging.info(f'unannotated_pred:{unannotated_pred}')
                 d_loss_unannotated = _d_loss(unannotated_pred, annotated=False)
 
                 # compute forward pass on discriminator using annotated data
                 annotated_inputs = inputs[annotated_idx]
                 annotated_targets = targets[annotated_idx]
-                d_input = _combine_input_and_map(annotated_inputs, annotated_targets)
-                annotated_pred = d_model(i, d_input.detach())
+                if i == 0:
+                    logging.info(f'annotated_inputs.shape:{annotated_inputs.shape}')
+                    logging.info(f'annotated_targets.shape:{annotated_targets.shape}')
+                d_input = _combine_input_and_map(annotated_inputs, annotated_targets.unsqueeze(1))  # add dimension
+                if i == 0:
+                    logging.info(f'd_input.shape:{d_input.shape}')
+                annotated_pred = d_model(d_input.detach(), i)
+                if i == 0:
+                    logging.info(f'annotated_pred:{annotated_pred}')
                 d_loss_annotated = _d_loss(annotated_pred, annotated=True)
 
                 # calculate total discriminator loss for unannotated and annotated data
@@ -119,8 +133,9 @@ class Training:
                 d_optimizer.step()
 
                 # compute forward pass on updated discriminator using only unannotated data
-                d_input = _combine_input_and_map(inputs, out)
-                fake_pred = d_model(i, d_input)
+                unannotated_out = out[:, 0, :, :]  # keep only 1 class to match target shape
+                d_input = _combine_input_and_map(inputs, unannotated_out.unsqueeze(1))
+                fake_pred = d_model(d_input, i)
 
                 # g_loss based on discriminator predictions
                 # if discriminator predicts unannotated correctly, generator not doing good enough job

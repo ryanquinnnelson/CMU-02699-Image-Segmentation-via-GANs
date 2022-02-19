@@ -121,8 +121,7 @@ class Octopus:
         logging.info('octopus is initializing pipeline components...')
         # initialize model
         self.g_model, self.d_model = self.modelhandler.get_model()
-        self.g_model = self.devicehandler.move_model_to_device(
-            self.g_model)  # move before initialize optimizer - Note 1
+        self.g_model = self.devicehandler.move_model_to_device(self.g_model)  # move before optimizer init - Note 1
         self.d_model = self.devicehandler.move_model_to_device(self.d_model)
         self.wandbconnector.watch(self.g_model)
         self.wandbconnector.watch(self.d_model)

@@ -49,20 +49,24 @@ class DataLoaderHandler:
             self.train_args = dict(shuffle=True,
                                    batch_size=self.batch_size,
                                    num_workers=self.num_workers,
-                                   pin_memory=self.pin_memory)
+                                   pin_memory=self.pin_memory,
+                                   drop_last=True)
         else:
             self.train_args = dict(shuffle=True,
-                                   batch_size=self.batch_size)
+                                   batch_size=self.batch_size,
+                                   drop_last=True)
 
         # set arguments based on GPU or CPU destination
         if device.type == 'cuda':
             self.val_args = dict(shuffle=False,
                                  batch_size=self.batch_size,
                                  num_workers=self.num_workers,
-                                 pin_memory=self.pin_memory)
+                                 pin_memory=self.pin_memory,
+                                 drop_last=True)
         else:
             self.val_args = dict(shuffle=False,
-                                 batch_size=self.batch_size)
+                                 batch_size=self.batch_size,
+                                 drop_last=True)
 
         self.test_args = self.val_args # test and validation have matching arguments
 
