@@ -115,7 +115,7 @@ class PhaseHandler:
 
             # scheduler
             self.schedulerhandler.update_scheduler(g_scheduler, self.statshandler.stats)
-            self.schedulerhandler.update_scheduler(d_scheduler, self.statshandler.stats)
+            # self.schedulerhandler.update_scheduler(d_scheduler, self.statshandler.stats)
 
             # save model checkpoint
             if epoch % 5 == 0:

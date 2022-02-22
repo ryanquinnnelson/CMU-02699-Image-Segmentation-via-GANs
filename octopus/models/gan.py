@@ -294,7 +294,6 @@ class SegmentationNetwork2(nn.Module):
         block5_list = all_lists[4]
         block6_list = all_lists[5]
         block7_list = all_lists[6]
-        logging.info(f'block1_list:{block1_list}')
 
         # build block 1
         self.block1 = _build_block(block1_list, layers_dict)

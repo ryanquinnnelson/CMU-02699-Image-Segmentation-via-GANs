@@ -110,4 +110,4 @@ optimizer_kwargs=lr=0.001,weight_decay=0.000005
 scheduler_type=ReduceLROnPlateau
 scheduler_kwargs=factor=0.75,patience=5,mode=min,verbose=True
 scheduler_plateau_metric=val_loss
-use_gan=True
+use_gan=False
