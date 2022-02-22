@@ -77,9 +77,9 @@ class CheckpointHandler:
             'g_optimizer_state_dict': g_optimizer.state_dict(),
             'g_scheduler_state_dict': g_scheduler.state_dict(),
 
-            'd_model_state_dict': d_model.state_dict(),
-            'd_optimizer_state_dict': d_optimizer.state_dict(),
-            'd_scheduler_state_dict': d_scheduler.state_dict(),
+            # 'd_model_state_dict': d_model.state_dict(),
+            # 'd_optimizer_state_dict': d_optimizer.state_dict(),
+            # 'd_scheduler_state_dict': d_scheduler.state_dict(),
 
             'next_epoch': next_epoch,
             'stats': stats
@@ -109,8 +109,8 @@ class CheckpointHandler:
         g_optimizer.load_state_dict(checkpoint['g_optimizer_state_dict'])
         g_scheduler.load_state_dict(checkpoint['g_scheduler_state_dict'])
 
-        d_model.load_state_dict(checkpoint['d_model_state_dict'])
-        d_optimizer.load_state_dict(checkpoint['d_optimizer_state_dict'])
-        d_scheduler.load_state_dict(checkpoint['d_scheduler_state_dict'])
+        # d_model.load_state_dict(checkpoint['d_model_state_dict'])
+        # d_optimizer.load_state_dict(checkpoint['d_optimizer_state_dict'])
+        # d_scheduler.load_state_dict(checkpoint['d_scheduler_state_dict'])
 
         return checkpoint

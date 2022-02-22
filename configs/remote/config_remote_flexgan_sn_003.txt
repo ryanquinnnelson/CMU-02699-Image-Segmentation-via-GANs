@@ -1,16 +1,22 @@
 [DEFAULT]
-run_name = Run-test
+run_name = flexgan_sn_003
 
 
 
 
 [debug]
-debug_path = /Users/ryanqnelson/Desktop/test/
+debug_path = /home/ubuntu/
+
+
+
+
+[pip]
+packages=--upgrade wandb==0.10.8
 
 
 
 [wandb]
-wandb_dir = /Users/ryanqnelson/Desktop/test
+wandb_dir = /home/ubuntu/wandb
 entity = ryanquinnnelson
 project = CMU-02699-PROJECT
 notes = Image Segmentation using GANs
@@ -18,44 +24,43 @@ tags = octopus,GAN,DAN
 
 
 
-
 [stats]
 comparison_metric=val_acc
 comparison_best_is_max=True
-comparison_patience=40
+comparison_patience=15
 val_metric_name=val_acc
-
-
 
 
 [data]
 data_type = image
-data_dir = /Users/ryanqnelson/Desktop/test/data/warwick
-train_dir = /Users/ryanqnelson/Desktop/test/data/warwick/training
-train_target_dir = /Users/ryanqnelson/Desktop/test/data/warwick/training_anno
-val_dir = /Users/ryanqnelson/Desktop/test/data/warwick/a
-val_target_dir = /Users/ryanqnelson/Desktop/test/data/warwick/a_anno
-test_dir = /Users/ryanqnelson/Desktop/test/data/warwick/b
-test_target_dir = /Users/ryanqnelson/Desktop/test/data/warwick/b_anno
+data_dir = /home/ubuntu/data/warwick
+train_dir = /home/ubuntu/data/warwick/training
+train_target_dir = /home/ubuntu/data/warwick/training_anno
+val_dir = /home/ubuntu/data/warwick/a
+val_target_dir = /home/ubuntu/data/warwick/a_anno
+test_dir = /home/ubuntu/data/warwick/b
+test_target_dir = /home/ubuntu/data/warwick/b_anno
 transforms_list = Resize,ToTensor
 
 
 
 
+
 [output]
-output_dir = /Users/ryanqnelson/Desktop/test/output
+output_dir = /home/ubuntu/output
 
 
 
 [dataloader]
 num_workers=8
 pin_memory=True
-batch_size=2
+batch_size=4
 
 
 [model]
 model_type=FlexGAN
-# remove maxpool2,cnn3 and standardize channel pattern
+
+# remove cnn3-5,maxpool3
 layers_list_sn=
 	cnn1,cnn2,maxpool1,cnn6,cnn7,BLOCKEND,
 	maxpool4,cnn8,cnn9,BLOCKEND,
@@ -87,20 +92,22 @@ layer_dict_sn=
 	cnn13.in_channels=256,cnn13.out_channels=2,cnn13.kernel_size=1,cnn13.stride=1,cnn13.padding=0
 
 
+
 [checkpoint]
-checkpoint_dir = /Users/ryanqnelson/Desktop/test/checkpoints
-delete_existing_checkpoints = True
+checkpoint_dir = /data/checkpoints
+delete_existing_checkpoints = False
 load_from_checkpoint=False
-checkpoint_file =  None
+checkpoint_file = None
 
 
 
 [hyperparameters]
-num_epochs = 2
+num_epochs = 30
 criterion_type=CrossEntropyLoss
 criterion_kwargs=use_burn_in=False
 optimizer_type=Adam
-optimizer_kwargs=lr=0.002,weight_decay=0.000005
+optimizer_kwargs=lr=0.001,weight_decay=0.000005
 scheduler_type=ReduceLROnPlateau
-scheduler_kwargs=factor=0.5,patience=5,mode=min,verbose=True
+scheduler_kwargs=factor=0.75,patience=5,mode=min,verbose=True
 scheduler_plateau_metric=val_loss
+use_gan=False

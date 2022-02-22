@@ -1,0 +1,117 @@
+[DEFAULT]
+run_name = flexgan_sn_002
+
+
+
+
+[debug]
+debug_path = /home/ubuntu/
+
+
+
+
+[pip]
+packages=--upgrade wandb==0.10.8
+
+
+
+[wandb]
+wandb_dir = /home/ubuntu/wandb
+entity = ryanquinnnelson
+project = CMU-02699-PROJECT
+notes = Image Segmentation using GANs
+tags = octopus,GAN,DAN
+
+
+
+[stats]
+comparison_metric=val_acc
+comparison_best_is_max=True
+comparison_patience=15
+val_metric_name=val_acc
+
+
+[data]
+data_type = image
+data_dir = /home/ubuntu/data/warwick
+train_dir = /home/ubuntu/data/warwick/training
+train_target_dir = /home/ubuntu/data/warwick/training_anno
+val_dir = /home/ubuntu/data/warwick/a
+val_target_dir = /home/ubuntu/data/warwick/a_anno
+test_dir = /home/ubuntu/data/warwick/b
+test_target_dir = /home/ubuntu/data/warwick/b_anno
+transforms_list = Resize,ToTensor
+
+
+
+
+
+[output]
+output_dir = /home/ubuntu/output
+
+
+
+[dataloader]
+num_workers=8
+pin_memory=True
+batch_size=4
+
+
+[model]
+model_type=FlexGAN
+
+# remove maxpool2,cnn3 and standardize channel pattern
+layers_list_sn=
+	cnn1,cnn2,maxpool1,cnn4,cnn5,maxpool3,cnn6,cnn7,BLOCKEND,
+	maxpool4,cnn8,cnn9,BLOCKEND,
+	maxpool5,cnn10,cnn11,BLOCKEND,
+	upconv1,BLOCKEND,
+	upconv2,BLOCKEND,
+	upconv3,BLOCKEND,
+	cnn12,cnn13,softmax1,BLOCKEND
+
+layer_dict_sn=
+	cnn1.in_channels=3,cnn1.out_channels=64,cnn1.kernel_size=3,cnn1.stride=1,cnn1.padding=1,
+	cnn2.in_channels=64,cnn2.out_channels=64,cnn2.kernel_size=3,cnn2.stride=1,cnn2.padding=1,
+	maxpool1.kernel_size=2,maxpool1.stride=2,maxpool1.padding=1,
+	cnn4.in_channels=64,cnn4.out_channels=128,cnn4.kernel_size=3,cnn4.stride=1,cnn4.padding=1,
+	cnn5.in_channels=128,cnn5.out_channels=128,cnn5.kernel_size=3,cnn5.stride=1,cnn5.padding=1,
+	maxpool3.kernel_size=2,maxpool3.stride=2,maxpool3.padding=1,
+	cnn6.in_channels=128,cnn6.out_channels=256,cnn6.kernel_size=3,cnn6.stride=1,cnn6.padding=1,
+	cnn7.in_channels=256,cnn7.out_channels=256,cnn7.kernel_size=3,cnn7.stride=1,cnn7.padding=1,
+	
+	maxpool4.kernel_size=2,maxpool4.stride=2,maxpool4.padding=1,
+	cnn8.in_channels=256,cnn8.out_channels=512,cnn8.kernel_size=3,cnn8.stride=1,cnn8.padding=1,
+	cnn9.in_channels=512,cnn9.out_channels=512,cnn9.kernel_size=3,cnn9.stride=1,cnn9.padding=1,
+	
+	maxpool5.kernel_size=2,maxpool5.stride=2,maxpool5.padding=1,
+	cnn10.in_channels=512,cnn10.out_channels=1024,cnn10.kernel_size=3,cnn10.stride=1,cnn10.padding=1,
+	cnn11.in_channels=1024,cnn11.out_channels=1024,cnn11.kernel_size=3,cnn11.stride=1,cnn11.padding=1,
+	
+	upconv1.in_channels=1024,upconv1.out_channels=1024,upconv1.height=224,upconv1.width=332,upconv1.mode=bilinear,
+	upconv2.in_channels=512,upconv2.out_channels=512,upconv2.height=224,upconv2.width=332,upconv2.mode=bilinear,
+	upconv3.in_channels=256,upconv3.out_channels=256,upconv3.height=224,upconv3.width=332,upconv3.mode=bilinear,
+	
+	cnn12.in_channels=1792,cnn12.out_channels=1024,cnn12.kernel_size=3,cnn12.stride=1,cnn12.padding=1,
+	cnn13.in_channels=1024,cnn13.out_channels=2,cnn13.kernel_size=1,cnn13.stride=1,cnn13.padding=0
+
+
+
+[checkpoint]
+checkpoint_dir = /data/checkpoints
+delete_existing_checkpoints = False
+load_from_checkpoint=False
+checkpoint_file = None
+
+
+
+[hyperparameters]
+num_epochs = 30
+criterion_type=CrossEntropyLoss
+criterion_kwargs=use_burn_in=False
+optimizer_type=Adam
+optimizer_kwargs=lr=0.001,weight_decay=0.000005
+scheduler_type=ReduceLROnPlateau
+scheduler_kwargs=factor=0.75,patience=5,mode=min,verbose=True
+scheduler_plateau_metric=val_loss
+use_gan=False
