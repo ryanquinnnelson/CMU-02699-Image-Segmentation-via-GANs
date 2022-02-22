@@ -220,52 +220,77 @@ def _build_block(layers_list, layers_dict):
     for layer in layers_list:
         if 'cnn' in layer:
 
-            in_channels = layers_dict[layer]['in_channels']
-            out_channels = layers_dict[layer]['out_channels']
-            kernel_size = layers_dict[layer]['kernel_size']
-            stride = layers_dict[layer]['stride']
-            padding = layers_dict[layer]['padding']
+            in_channels = layers_dict[layer][layer + '.in_channels']
+            out_channels = layers_dict[layer][layer + '.out_channels']
+            kernel_size = layers_dict[layer][layer + '.kernel_size']
+            stride = layers_dict[layer][layer + '.stride']
+            padding = layers_dict[layer][layer + '.padding']
             block.add_module(layer, CnnBlock(in_channels, out_channels, kernel_size, stride, padding))
 
         elif 'maxpool' in layer:
-            kernel_size = layers_dict[layer]['kernel_size']
-            stride = layers_dict[layer]['stride']
-            padding = layers_dict[layer]['padding']
+            kernel_size = layers_dict[layer][layer + '.kernel_size']
+            stride = layers_dict[layer][layer + '.stride']
+            padding = layers_dict[layer][layer + '.padding']
             block.add_module(layer, nn.MaxPool2d(kernel_size, stride, padding))
 
         elif 'linear' in layer:
-            in_features = layers_dict[layer]['in_features']
-            out_features = layers_dict[layer]['out_features']
-            batchnorm = layers_dict[layer]['batchnorm']
-            activation = layers_dict[layer]['activation']
+            in_features = layers_dict[layer][layer + '.in_features']
+            out_features = layers_dict[layer][layer + '.out_features']
+            batchnorm = layers_dict[layer][layer + '.batchnorm']
+            activation = layers_dict[layer][layer + '.activation']
             block.add_module(layer, LinearBlock(in_features, out_features, batchnorm, activation))
 
         elif 'upconv' in layer:
-            in_channels = layers_dict[layer]['in_channels']
-            out_channels = layers_dict[layer]['out_channels']
-            width = layers_dict[layer]['width']
-            height = layers_dict[layer]['height']
-            mode = layers_dict[layer]['mode']
+            in_channels = layers_dict[layer][layer + '.in_channels']
+            out_channels = layers_dict[layer][layer + '.out_channels']
+            width = layers_dict[layer][layer + '.width']
+            height = layers_dict[layer][layer + '.height']
+            mode = layers_dict[layer][layer + '.mode']
             block.add_module(layer, UpConvBlock(in_channels, out_channels, (height, width), mode))
 
         elif 'flatten' in layer:
             block.add_module(layer, nn.Flatten())
 
-        elif 'lazylinear' in layer:
-            out_features = layers_dict[layer]['out_features']
-            block.add_module(layer, nn.LazyLinear(out_features))  # requires torch version 1.8+
-            block.add_module('lazybn', nn.BatchNorm1d(out_features))
-            block.add_module('lazyrelu', nn.ReLU(inplace=True))
+        # elif 'lazylinear' in layer:
+        #     out_features = layers_dict[layer][layer + '.out_features']
+        #     block.add_module(layer, nn.LazyLinear(out_features))  # requires torch version 1.8+
+        #     block.add_module('lazybn', nn.BatchNorm1d(out_features))
+        #     block.add_module('lazyrelu', nn.ReLU(inplace=True))
+
+        elif 'softmax' in layer:
+            block.add_module(layer, nn.Softmax())
 
     return block
 
 
-# contains 3 blocks, all feeding into concatenate upsampling layer
+# contains 7 blocks
+# concatenate upsampling layers
 # block contents are customizable
 class SegmentationNetwork2(nn.Module):
-    def __init__(self, block1_list, block2_list, block3_list, block4_list,
-                 block5_list, block6_list, block7_list, layers_dict):
+    def __init__(self, layers_lists, layers_dict):
         super().__init__()
+
+        # unpack 7 layers
+        complete = 0
+        block_list = []
+        all_lists = []
+        while complete < 7:
+            layer = layers_lists.pop(0)  # remove first element
+            if layer != 'END':
+                block_list.append(layer)
+            else:
+                # block is complete
+                all_lists.append(block_list)
+                complete += 1
+
+        block1_list = all_lists[0]
+        block2_list = all_lists[1]
+        block3_list = all_lists[2]
+        block4_list = all_lists[3]
+        block5_list = all_lists[4]
+        block6_list = all_lists[5]
+        block7_list = all_lists[6]
+        logging.info(f'block1_list:{block1_list}')
 
         # build block 1
         self.block1 = _build_block(block1_list, layers_dict)
@@ -317,7 +342,7 @@ class SegmentationNetwork2(nn.Module):
 
 
 class EvaluationNetwork(nn.Module):
-    def __init__(self, in_features):
+    def __init__(self, in_features=4):
         super().__init__()
 
         self.block1 = nn.Sequential(
