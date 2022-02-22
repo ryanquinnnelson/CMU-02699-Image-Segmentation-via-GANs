@@ -373,13 +373,13 @@ def initialize_variable_handlers(config):
     # model
     if 'GAN' in config['model']['model_type']:
         # build layer_dict
-        layers_dict = _to_mixed_dict(config['model']['layer_dict'])
-        logging.info(f'layer_dict:{layers_dict}')
+        layers_dict_sn = _to_mixed_dict(config['model']['layer_dict_sn'])
+        logging.info(f'layer_dict:{layers_dict_sn}')
 
-        layers_list = _to_string_list(config['model']['layers_list'])
-        logging.info(f'layers_list:{layers_list}')
+        layers_list_sn = _to_string_list(config['model']['layers_list_sn'])
+        logging.info(f'layers_list:{layers_list_sn}')
 
-        modelhandler = GanHandler(config['model']['model_type'], layers_list, layers_dict)
+        modelhandler = GanHandler(config['model']['model_type'], layers_list_sn, layers_dict_sn)
 
     else:
         modelhandler = None

@@ -270,18 +270,22 @@ class SegmentationNetwork2(nn.Module):
     def __init__(self, layers_lists, layers_dict):
         super().__init__()
 
-        # unpack 7 layers
+        # unpack list of layers into 7 blocks
+        # each block ends when list entry is BLOCKEND
         complete = 0
         block_list = []
         all_lists = []
         while complete < 7:
             layer = layers_lists.pop(0)  # remove first element
-            if layer != 'END':
+            if layer != 'BLOCKEND':
                 block_list.append(layer)
             else:
                 # block is complete
                 all_lists.append(block_list)
+
+                # start next block
                 complete += 1
+                block_list = []
 
         block1_list = all_lists[0]
         block2_list = all_lists[1]
