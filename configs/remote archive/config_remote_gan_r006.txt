@@ -1,0 +1,83 @@
+[DEFAULT]
+run_name = zhang_sn_006
+
+
+
+
+[debug]
+debug_path = /home/ubuntu/
+
+
+
+
+[pip]
+packages=--upgrade wandb==0.10.8
+
+
+
+[wandb]
+wandb_dir = /home/ubuntu/wandb
+entity = ryanquinnnelson
+project = CMU-02699-PROJECT
+notes = Image Segmentation using GANs
+tags = octopus,GAN,DAN
+
+
+
+[stats]
+comparison_metric=val_acc
+comparison_best_is_max=True
+comparison_patience=15
+val_metric_name=val_acc
+
+
+[data]
+data_type = image
+data_dir = /home/ubuntu/data/warwick
+train_dir = /home/ubuntu/data/warwick/training
+train_target_dir = /home/ubuntu/data/warwick/training_anno
+val_dir = /home/ubuntu/data/warwick/a
+val_target_dir = /home/ubuntu/data/warwick/a_anno
+test_dir = /home/ubuntu/data/warwick/b
+test_target_dir = /home/ubuntu/data/warwick/b_anno
+transforms_list = Resize,ToTensor
+
+
+
+
+
+[output]
+output_dir = /home/ubuntu/output
+
+
+
+[dataloader]
+num_workers=8
+pin_memory=True
+batch_size=4
+
+
+[model]
+model_type=ZhangGAN
+input_size=4
+
+
+
+[checkpoint]
+checkpoint_dir = /data/checkpoints
+delete_existing_checkpoints = False
+load_from_checkpoint=False
+checkpoint_file = None
+
+
+
+[hyperparameters]
+num_epochs = 100
+criterion_type=CrossEntropyLoss
+criterion_kwargs=use_burn_in=False
+optimizer_type=Adam
+optimizer_kwargs=lr=0.001,weight_decay=0.000005
+scheduler_type=ReduceLROnPlateau
+scheduler_kwargs=factor=0.75,patience=5,mode=min,verbose=True
+scheduler_plateau_metric=val_loss
+use_gan=True

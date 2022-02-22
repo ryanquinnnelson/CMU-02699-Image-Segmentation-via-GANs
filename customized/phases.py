@@ -62,7 +62,7 @@ class Training:
 
         # Set model in 'Training mode'
         g_model.train()
-        d_model.train()
+        # d_model.train()
 
         # process mini-batches
         for i, (inputs, targets) in enumerate(self.train_loader):

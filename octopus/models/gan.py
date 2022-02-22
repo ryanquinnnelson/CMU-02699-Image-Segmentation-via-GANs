@@ -220,32 +220,32 @@ def _build_block(layers_list, layers_dict):
     for layer in layers_list:
         if 'cnn' in layer:
 
-            in_channels = layers_dict[layer][layer + '.in_channels']
-            out_channels = layers_dict[layer][layer + '.out_channels']
-            kernel_size = layers_dict[layer][layer + '.kernel_size']
-            stride = layers_dict[layer][layer + '.stride']
-            padding = layers_dict[layer][layer + '.padding']
+            in_channels = layers_dict[layer + '.in_channels']
+            out_channels = layers_dict[layer + '.out_channels']
+            kernel_size = layers_dict[layer + '.kernel_size']
+            stride = layers_dict[layer + '.stride']
+            padding = layers_dict[layer + '.padding']
             block.add_module(layer, CnnBlock(in_channels, out_channels, kernel_size, stride, padding))
 
         elif 'maxpool' in layer:
-            kernel_size = layers_dict[layer][layer + '.kernel_size']
-            stride = layers_dict[layer][layer + '.stride']
-            padding = layers_dict[layer][layer + '.padding']
+            kernel_size = layers_dict[layer + '.kernel_size']
+            stride = layers_dict[layer + '.stride']
+            padding = layers_dict[layer + '.padding']
             block.add_module(layer, nn.MaxPool2d(kernel_size, stride, padding))
 
         elif 'linear' in layer:
-            in_features = layers_dict[layer][layer + '.in_features']
-            out_features = layers_dict[layer][layer + '.out_features']
-            batchnorm = layers_dict[layer][layer + '.batchnorm']
-            activation = layers_dict[layer][layer + '.activation']
+            in_features = layers_dict[layer + '.in_features']
+            out_features = layers_dict[layer + '.out_features']
+            batchnorm = layers_dict[layer + '.batchnorm']
+            activation = layers_dict[layer + '.activation']
             block.add_module(layer, LinearBlock(in_features, out_features, batchnorm, activation))
 
         elif 'upconv' in layer:
-            in_channels = layers_dict[layer][layer + '.in_channels']
-            out_channels = layers_dict[layer][layer + '.out_channels']
-            width = layers_dict[layer][layer + '.width']
-            height = layers_dict[layer][layer + '.height']
-            mode = layers_dict[layer][layer + '.mode']
+            in_channels = layers_dict[layer + '.in_channels']
+            out_channels = layers_dict[layer + '.out_channels']
+            width = layers_dict[layer + '.width']
+            height = layers_dict[layer + '.height']
+            mode = layers_dict[layer + '.mode']
             block.add_module(layer, UpConvBlock(in_channels, out_channels, (height, width), mode))
 
         elif 'flatten' in layer:
@@ -258,7 +258,7 @@ def _build_block(layers_list, layers_dict):
         #     block.add_module('lazyrelu', nn.ReLU(inplace=True))
 
         elif 'softmax' in layer:
-            block.add_module(layer, nn.Softmax())
+            block.add_module(layer, nn.Softmax2d())
 
     return block
 

@@ -8,6 +8,8 @@ import os
 import shutil
 
 import torch
+
+
 # from pynvml import *
 
 
@@ -84,8 +86,8 @@ def _to_string_list(s):
     Returns:List
 
     """
-
-    return s.strip().split(',')
+    l1 = s.strip().split(',')
+    return [each.strip() for each in l1]  # strip off newline characters when using formatted config file
 
 
 def _to_int_dict(s):
@@ -173,10 +175,10 @@ def _to_mixed_dict(s):
                 d[key] = True
             elif val == 'False':
                 d[key] = False
-            continue  # skip additional attempts to parse the type
+            else:
+                raise ValueError
         except ValueError:
             pass  # leave as string
 
         d[key] = val
-
     return d

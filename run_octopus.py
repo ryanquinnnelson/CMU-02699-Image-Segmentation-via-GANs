@@ -26,7 +26,7 @@ def main():
         octopus.install_packages()
         octopus.setup_environment()
         octopus.initialize_pipeline_components()
-        octopus.run_pipeline()
+        # octopus.run_pipeline()
         octopus.cleanup()
 
 

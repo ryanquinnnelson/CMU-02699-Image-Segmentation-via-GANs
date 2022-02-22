@@ -122,16 +122,20 @@ class Octopus:
         # initialize model
         self.g_model, self.d_model = self.modelhandler.get_model()
         self.g_model = self.devicehandler.move_model_to_device(self.g_model)  # move before optimizer init - Note 1
-        self.d_model = self.devicehandler.move_model_to_device(self.d_model)
+        # self.d_model = self.devicehandler.move_model_to_device(self.d_model)
         self.wandbconnector.watch(self.g_model)
-        self.wandbconnector.watch(self.d_model)
+        # self.wandbconnector.watch(self.d_model)
 
         # initialize model components
         self.loss_func = self.criterionhandler.get_loss_function()
         self.g_optimizer = self.optimizerhandler.get_optimizer(self.g_model)
         self.g_scheduler = self.schedulerhandler.get_scheduler(self.g_optimizer)
-        self.d_optimizer = self.optimizerhandler.get_optimizer(self.d_model)
-        self.d_scheduler = self.schedulerhandler.get_scheduler(self.d_optimizer)
+        # self.d_optimizer = self.optimizerhandler.get_optimizer(self.d_model)
+        # self.d_scheduler = self.schedulerhandler.get_scheduler(self.d_optimizer)
+
+        self.d_model = None
+        self.d_optimizer = None
+        self.d_scheduler = None
 
         # load data
         self.train_loader, self.val_loader, self.test_loader = self.dataloaderhandler.load(self.inputhandler)
@@ -372,15 +376,11 @@ def initialize_variable_handlers(config):
 
     # model
     if 'GAN' in config['model']['model_type']:
-        # build layer_dict
-        layers_dict_sn = _to_mixed_dict(config['model']['layer_dict_sn'])
-        logging.info(f'layer_dict:{layers_dict_sn}')
 
+        layers_dict_sn = _to_mixed_dict(config['model']['layer_dict_sn'])
         layers_list_sn = _to_string_list(config['model']['layers_list_sn'])
-        logging.info(f'layers_list:{layers_list_sn}')
 
         modelhandler = GanHandler(config['model']['model_type'], layers_list_sn, layers_dict_sn)
-
     else:
         modelhandler = None
 
