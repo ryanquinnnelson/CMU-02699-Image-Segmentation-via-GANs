@@ -9,7 +9,7 @@ debug_path = /Users/ryanqnelson/Desktop/test/
 [wandb]
 wandb_dir = /Users/ryanqnelson/Desktop/test
 entity = ryanquinnnelson
-project = octopus
+project = CMU-02699-PROJECT
 notes = Image Segmentation using GANs
 tags = octopus,GAN,DAN
 mode = online

@@ -1,14 +1,14 @@
 name: sweep_local_test
-program: /Users/ryanqnelson/GitHub/ryanquinnnelson/octopus/run_octopus.py
+program: /Users/ryanqnelson/GitHub/ryanquinnnelson/CMU-02699-PROJECT/run_octopus.py
 method: grid
-project: octopus
+project: CMU-02699-PROJECT
 entity: ryanquinnnelson
 metric:
   goal: minimize
   name: val_loss
 parameters:
   filename:
-    values: ["/Users/ryanqnelson/GitHub/ryanquinnnelson/octopus/configs/local/config_local_gan_r001.txt"]
+    values: ["/Users/ryanqnelson/GitHub/ryanquinnnelson/CMU-02699-PROJECT/configs/local/config_local_gan_r001.txt"]
   lr:
     values: [0.001, 0.01]
   optimizer_type:
