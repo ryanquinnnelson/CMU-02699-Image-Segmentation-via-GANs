@@ -18,6 +18,16 @@ class SchedulerHandler:
         logging.info('Initializing scheduler handler...')
 
     def get_schedulers(self, optimizers, wandb_config):
+        """
+        For each optimizer, define a scheduler based on parameters.
+
+        Args:
+            optimizers (Collection[torch.optim]): Optimizers for which schedulers will be defined
+            wandb_config (wandb.config):  Object which contains configuration in a key.value format.
+
+        Returns: (Collection[torch.optim], Collection[String]) representing (schedulers, scheduler names)
+
+        """
 
         scheduler_names = ['sn_scheduler', 'en_scheduler']
         schedulers = []
@@ -33,6 +43,7 @@ class SchedulerHandler:
         Obtain the scheduler based on parameters.
         Args:
             optimizer (nn.optim): Optimizer associated with the scheduler
+            wandb_config (wandb.config): Object which contains configuration in a key.value format.
         Returns: nn.optim Scheduler
         """
         scheduler = None

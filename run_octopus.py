@@ -7,7 +7,7 @@ import sys
 import os
 import configparser
 
-# TODO: find a way to avoid specifying this
+# TODO: find a way to avoid adding the path
 # TODO: find a way to avoid hard-coding this value
 # append path so we can use local octopus package
 sys.path.append('/Users/ryanqnelson/GitHub/ryanquinnnelson/octopus')
@@ -24,7 +24,6 @@ os.environ['CUDA_LAUNCH_BLOCKING'] = "1"  # better error tracking from gpu
 
 
 def main():
-
     # get filename from arguments
     config_file = None
     for arg in sys.argv:

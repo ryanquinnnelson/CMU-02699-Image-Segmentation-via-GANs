@@ -1,5 +1,5 @@
 """
-Contains all Dataset objects customized to the data.
+Defines all Dataset objects customized to the data.
 """
 __author__ = 'ryanquinnnelson'
 
@@ -16,23 +16,28 @@ import customized.helper as helper
 
 
 class DatasetHandler:
+    """
+    Defines object to initialize Dataset objects.
+    """
     def __init__(self, data_dir):
         """
-        Initialize NumericalDatasetHandler.
-        :param data_dir (str): fully qualified path to root directory inside which data subdirectories are placed
-        :param train_data (str): fully qualified path to training data
-        :param val_data (str): fully qualified path to validation data
-        :param train_class (Dataset): torch Dataset class to use for training data
-        :param val_class (Dataset): torch Dataset class to use for validation data
+        Initialize DatasetHandler
+        Args:
+            data_dir (str): root directory where all training, validation, and test data exists
         """
-
         self.data_dir = data_dir
 
     def get_train_dataset(self, config):
         """
         Load training data into memory and initialize the Dataset object.
-        :return: Dataset
+
+        Args:
+            config (ConfigParser): configuration in ConfigParser format.
+
+        Returns:Dataset
+
         """
+
         # parse configs
         train_dir = config['data']['train_dir']
         train_target_dir = config['data']['train_target_dir']
@@ -48,7 +53,12 @@ class DatasetHandler:
     def get_val_dataset(self, config):
         """
         Load validation data into memory and initialize the Dataset object.
-        :return: Dataset
+
+        Args:
+            config (ConfigParser): configuration in ConfigParser format.
+
+        Returns:Dataset
+
         """
         # parse configs
         val_dir = config['data']['val_dir']
@@ -72,8 +82,13 @@ class DatasetHandler:
 
     def get_test_dataset(self, config):
         """
-        Load validation data into memory and initialize the Dataset object.
-        :return: Dataset
+        Load test data into memory and initialize the Dataset object.
+
+        Args:
+            config (ConfigParser): configuration in ConfigParser format.
+
+        Returns:Dataset
+
         """
         # parse configs
         test_dir = config['data']['test_dir']
@@ -110,8 +125,19 @@ def _apply_transformations(img, target):
 
 
 class ImageDataset(Dataset):
+    """
+    Defines object that represents an image Dataset.
+    """
 
     def __init__(self, img_dir, targets_dir, transform=None):
+        """
+        Initialize ImageDataset.
+
+        Args:
+            img_dir (str): Directory for images
+            targets_dir (str): Directory for targets related to given images
+            transform (transformation to perform on both images and targets):
+        """
         self.img_dir = img_dir
         self.targets_dir = targets_dir
         self.transform = transform
@@ -167,17 +193,15 @@ def _compose_transforms(transforms_list, resize_height):
     Args:
         transforms_list (List): list of strings representing individual transformations,
         in the order they should be performed
+        resize_height (int): Number of pixels tall that image should be after resizing
     Returns: transforms.Compose object containing all desired transformations
     """
     t_list = []
 
     for each in transforms_list:
-        if each == 'RandomHorizontalFlip':
-            t_list.append(transforms.RandomHorizontalFlip(0.1))  # customized because 0.5 is too much
-        elif each == 'ToTensor':
+        if each == 'ToTensor':
             t_list.append(transforms.ToTensor())
         elif each == 'Resize':
-            # t_list.append(transforms.Resize((775, 522), interpolation='bilinear'))
             t_list.append(transforms.Resize(resize_height, interpolation=Image.BILINEAR))
 
     composition = transforms.Compose(t_list)

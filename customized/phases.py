@@ -1,3 +1,7 @@
+"""
+All things related to training, validation, and testing phases.
+"""
+
 import logging
 
 import numpy as np
@@ -6,27 +10,56 @@ import torch.nn as nn
 
 
 class PhaseHandler:
-
-    def __init__(self):
-        pass
+    """
+    Defines object to initialize phases.
+    """
 
     def get_train_phase(self, devicehandler, train_loader, wandb_config):
+        """
+        Obtain a Training object based on given parameters.
+        Args:
+            devicehandler (DeviceHandler): defines torch.device
+            train_loader (DataLoader): DataLoader object for the training dataset
+            wandb_config (wandb.config): Object which contains configuration in a key.value format.
+
+        Returns: Training object
+
+        """
         training_phase = Training(devicehandler, train_loader, wandb_config)
-        logging.info(f'Criterion for training phase:' +
-                     f'\ngenerator:{training_phase.sn_criterion}\ndiscriminator:{training_phase.en_criterion}')
+
         return training_phase
 
     def get_val_phase(self, devicehandler, val_loader, wandb_config):
+        """
+        Obtain a Validation object based on given parameters.
+        Args:
+            devicehandler (DeviceHandler): defines torch.device
+            val_loader (DataLoader): DataLoader object for the validation dataset
+            wandb_config (wandb.config): Object which contains configuration in a key.value format.
+
+        Returns: Validation object
+
+        """
         validation_phase = Validation(devicehandler, val_loader, wandb_config)
-        logging.info(f'Criterion for validation phase:\ngenerator:{validation_phase.criterion}')
+
         return validation_phase
 
     def get_test_phase(self, devicehandler, test_loader, wandb_config, output_dir):
+        """
+        Obtain a Testing object based on given parameters.
+        Args:
+            devicehandler (DeviceHandler): defines torch.device
+            test_loader (DataLoader): DataLoader object for the testing dataset
+            wandb_config (wandb.config): Object which contains configuration in a key.value format.
+
+        Returns: Testing object
+
+        """
         testing_phase = Testing(wandb_config, devicehandler, output_dir, test_loader)
         return testing_phase
 
 
-def get_criterion(criterion_type):
+def _get_criterion(criterion_type):
     criterion = None
     if criterion_type == 'CrossEntropyLoss':
         criterion = nn.CrossEntropyLoss()
@@ -35,7 +68,7 @@ def get_criterion(criterion_type):
     return criterion
 
 
-def calculate_num_hits(i, targets, out):
+def _calculate_num_hits(i, targets, out):
     # convert out to class labels
     labels_out = out.argmax(axis=1)
     if i == 0:
@@ -52,7 +85,7 @@ def calculate_num_hits(i, targets, out):
 
 
 # https://towardsdatascience.com/intersection-over-union-iou-calculation-for-evaluating-an-image-segmentation-model-8b22e2e84686
-def calculate_iou_score(i, targets, out):
+def _calculate_iou_score(i, targets, out):
     targets = targets.cpu().detach().numpy()
 
     # convert to class labels
@@ -86,18 +119,45 @@ def _d_loss(pred, criterion, annotated=True):
 
 
 class Training:
+    """
+    Defines object to run a training phase.
+    """
+
     def __init__(self, devicehandler, dataloader, wandb_config):
+        """
+        Initialize Training object.
+
+        Args:
+            devicehandler (DeviceHandler): defines torch.device
+            dataloader (DataLoader): DataLoader object for the training dataset
+            wandb_config (wandb.config): Object which contains configuration in a key.value format.
+        """
         self.devicehandler = devicehandler
         self.dataloader = dataloader
 
-        self.sn_criterion = get_criterion(wandb_config.sn_criterion)
-        self.en_criterion = get_criterion(wandb_config.en_criterion)
+        self.sn_criterion = _get_criterion(wandb_config.sn_criterion)
+        self.en_criterion = _get_criterion(wandb_config.en_criterion)
         self.use_gan = wandb_config.use_gan
         self.sigma = wandb_config.sigma
         self.sigma_weight = wandb_config.sigma_weight
         self.gan_start_epoch = wandb_config.gan_start_epoch
 
+        logging.info(f'Criterion for training phase:' +
+                     f'\ngenerator:{self.sn_criterion}\ndiscriminator:{self.en_criterion}')
+
     def run_epoch(self, epoch, num_epochs, models, optimizers):
+        """
+        Run training epoch.
+
+        Args:
+            epoch (int): Epoch being trained
+            num_epochs (int): Total number of epochs to be trained
+            models (Collection[nn.Module]): models being trained
+            optimizers (Collection[nn.optim]): optimizers matching each model
+
+        Returns: Dict of training stats
+
+        """
         logging.info(f'Running epoch {epoch}/{num_epochs} of training...')
 
         total_g_train_loss = 0
@@ -231,12 +291,38 @@ class Training:
 
 
 class Validation:
+    """
+    Defines object to run a validation phase.
+    """
+
     def __init__(self, devicehandler, dataloader, wandb_config):
+        """
+        Initialize Validation object.
+
+        Args:
+            devicehandler (DeviceHandler): defines torch.device
+            dataloader (DataLoader): DataLoader object for the validation dataset
+            wandb_config (wandb.config): Object which contains configuration in a key.value format.
+        """
+
         self.devicehandler = devicehandler
         self.dataloader = dataloader
-        self.criterion = get_criterion(wandb_config.sn_criterion)
+        self.criterion = _get_criterion(wandb_config.sn_criterion)
+
+        logging.info(f'Criterion for validation phase:\ngenerator:{self.criterion}')
 
     def run_epoch(self, epoch, num_epochs, models):
+        """
+        Run validation epoch.
+
+        Args:
+            epoch (int): Epoch being validated
+            num_epochs (int): Total number of epochs to be validated
+            models (Collection[nn.Module]): models being validated
+
+        Returns: Dict of validation stats
+
+        """
         logging.info(f'Running epoch {epoch}/{num_epochs} of evaluation...')
 
         total_val_loss = 0
@@ -271,8 +357,8 @@ class Validation:
                 total_val_loss += loss.item()
 
                 # calculate accuracy
-                total_hits += calculate_num_hits(i, targets, out)
-                total_iou_score += calculate_iou_score(i, targets, out)
+                total_hits += _calculate_num_hits(i, targets, out)
+                total_iou_score += _calculate_iou_score(i, targets, out)
 
                 # delete mini-batch from device
                 del inputs
@@ -293,12 +379,33 @@ class Validation:
 
 # TODO: format and save output
 class Testing:
-    def __init__(self, wandb_config, devicehandler, outputhandler, test_loader):
+    def __init__(self, devicehandler, dataloader, wandb_config, output_dir):
+        """
+        Initialize Validation object.
+
+        Args:
+            devicehandler (DeviceHandler): defines torch.device
+            dataloader (DataLoader): DataLoader object for the validation dataset
+            wandb_config (wandb.config): Object which contains configuration in a key.value format.
+            output_dir (str): Directory where output should be written
+        """
         self.devicehandler = devicehandler
-        self.outputhandler = outputhandler
-        self.test_loader = test_loader
+        self.output_dir = output_dir
+        self.dataloader = dataloader
 
     def run_epoch(self, epoch, num_epochs, models):
+        """
+        Run test epoch.
+
+        Args:
+            epoch (int): Epoch being tested
+            num_epochs (int): Total number of epochs to be tested
+            models (Collection[nn.Module]): models being tested
+
+        Returns: Dict of test stats
+
+        """
+
         logging.info(f'Running epoch {epoch}/{num_epochs} of testing...')
 
         # g_model = models[0]
@@ -308,7 +415,7 @@ class Testing:
         #     g_model.eval()
         #
         #     # process mini-batches
-        #     for i, (inputs, targets) in enumerate(self.test_loader):
+        #     for i, (inputs, targets) in enumerate(self.dataloader):
         #         # prep
         #         inputs, targets = self.devicehandler.move_data_to_device(g_model, inputs, targets)
         #

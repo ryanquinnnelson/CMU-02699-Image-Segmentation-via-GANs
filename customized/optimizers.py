@@ -18,13 +18,20 @@ class OptimizerHandler:
     def __init__(self):
         """
         Initialize OptimizerHandler.
-        Args:
-            optimizer_type (str): represents the optimizer to construct
-            optimizer_kwargs (Dict): dictionary of arguments for use in optimizer initialization
         """
         logging.info('Initializing optimizer handler...')
 
     def get_optimizers(self, models, wandb_config):
+        """
+        For each model, define an optimizer based on parameters.
+
+        Args:
+            models (Collection[torch.nn.Module]): Models for which optimizers will be defined
+            wandb_config (wandb.config):  Object which contains configuration in a key.value format.
+
+        Returns: (Collection[torch.optim], Collection[String]) representing (optimizers, optimizer names)
+
+        """
 
         optimizers = []
         optimizer_names = ['sn_optimizer', 'en_optimizer']
@@ -39,6 +46,8 @@ class OptimizerHandler:
         Obtain the optimizer based on parameters.
         Args:
             model (nn.Module): model optimizer will manage
+            wandb_config (wandb.config):  Object which contains configuration in a key.value format.
+
         Returns: nn.optim optimizer
         """
         opt = None
