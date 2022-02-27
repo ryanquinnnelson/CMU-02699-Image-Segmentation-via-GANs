@@ -177,11 +177,13 @@ class Training:
         # process mini-batches
         for i, (inputs, targets) in enumerate(self.dataloader):
             logging.info(f'training batch:{i}')
+            logging.info(f'inputs.shape:{inputs.shape}')
             # prep
             g_optimizer.zero_grad()
             torch.cuda.empty_cache()
 
             inputs, targets = self.devicehandler.move_data_to_device(g_model, inputs, targets)
+            logging.info(f'inputs.shape:{inputs.shape}')
 
             # compute forward pass on generator
             out = g_model.forward(inputs, i)

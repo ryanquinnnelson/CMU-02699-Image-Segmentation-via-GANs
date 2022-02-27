@@ -1,5 +1,5 @@
 name: sweep_remote_test
-program: /home/ubuntu/CMU-02699-PROJECT/run_octopus.py
+program: /home/ubuntu/CMU-02699-Image-Segmentation-via-GANs/run_octopus.py
 method: grid
 project: CMU-02699-PROJECT
 entity: ryanquinnnelson
@@ -8,7 +8,7 @@ metric:
   name: val_loss
 parameters:
   filename:
-    values: ["/home/ubuntu/CMU-02699-PROJECT/configs/remote/config_remote_gan_r001.txt"]
+    values: ["/home/ubuntu/CMU-02699-Image-Segmentation-via-GANs/configs/remote/config_remote_gan_r001.txt"]
   lr:
     values: [0.001, 0.01]
   optimizer_type:
