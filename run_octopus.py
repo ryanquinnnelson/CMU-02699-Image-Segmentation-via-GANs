@@ -10,7 +10,8 @@ import configparser
 # TODO: find a way to avoid adding the path
 # TODO: find a way to avoid hard-coding this value
 # append path so we can use local octopus package
-sys.path.append('/Users/ryanqnelson/GitHub/ryanquinnnelson/octopus')
+sys.path.append('/Users/ryanqnelson/GitHub/ryanquinnnelson/octopus')  # local
+sys.path.append('/home/ubuntu/octopus')  # remote
 from octopus.octopus import Octopus
 
 from customized.datasets import DatasetHandler

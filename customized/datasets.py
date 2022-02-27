@@ -160,7 +160,7 @@ class ImageDataset(Dataset):
         target_path = os.path.join(self.targets_dir, img_name + '_anno.bmp')
 
         img = Image.open(img_path).convert('RGB')
-        target = Image.open(target_path).convert('RGB')
+        target = Image.open(target_path)#.convert('RGB')
 
         # standardize image size based on original image size
         img = img.resize((775, 522), resample=Image.BILINEAR)  # standardize image size
@@ -171,10 +171,10 @@ class ImageDataset(Dataset):
 
         # transform and convert to tensors
         tensor_img = self.transform(img)
-        tensor_target = self.transform(target)
+        tensor_target = self.transform(target)  # (C, H, W)
 
         # keep only first channel because all three channels are given the same value
-        tensor_target_first_channel = tensor_target[0]
+        tensor_target_first_channel = tensor_target[0]  # (H,W)
 
         # convert all nonzero target values to 1
         # nonzero values indicate segment
