@@ -30,8 +30,15 @@ class ModelHandler:
                                   first_layer_out_channels, block_pattern, upsampling_pattern, original_height,
                                   original_width)
 
+        elif wandb_config.sn_model_type == 'ZhengSN':
+
+            input_channels = wandb_config.input_channels
+            sn = ZhengSN(input_channels)
+
         if wandb_config.en_model_type == 'ENLite':
             en = ENLite()
+        elif wandb_config.sn_model_type == 'ZhengEN':
+            en = ZhengEN()
 
         logging.info(f'Generator model initialized:\n{sn}')
         logging.info(f'Discriminator model initialized:\n{en}')
@@ -132,6 +139,8 @@ class LinearBlock(nn.Module):
         return x
 
 
+# Simplified SN model from paper "Deep Adversarial Networks for Biomedical Image Segmentation..."
+# layers are reduced to run fast for testing purposes
 class SNLite(nn.Module):
     def __init__(self):
         super().__init__()
@@ -151,6 +160,8 @@ class SNLite(nn.Module):
         return block7out
 
 
+# Simplified EN model from paper "Deep Adversarial Networks for Biomedical Image Segmentation..."
+# layers are reduced to run fast for testing purposes
 class ENLite(nn.Module):
     def __init__(self):
         super().__init__()
@@ -170,6 +181,174 @@ class ENLite(nn.Module):
 
         self.block3 = nn.Sequential(
             LinearBlock(297472, 256),  # 4*224*332
+            LinearBlock(256, 128),
+            LinearBlock(128, 64),
+            nn.Linear(64, 1),  # binary classes
+            nn.Sigmoid()
+        )
+
+    def forward(self, x, i):
+        if i == 0:
+            logging.info(f'x:{x.shape}')
+
+        block1out = self.block1(x)
+
+        if i == 0:
+            logging.info(f'block1out:{block1out.shape}')
+        block2out = self.block2(block1out)
+
+        if i == 0:
+            logging.info(f'block2out:{block2out.shape}')
+
+        block3out = self.block3(block2out)
+
+        if i == 0:
+            logging.info(f'block3out:{block3out.shape}')
+
+        return block3out
+
+
+# SN model from paper "Deep Adversarial Networks for Biomedical Image Segmentation Utilizing Unannotated Images"
+class ZhengSN(nn.Module):
+    def __init__(self, in_features):
+        super().__init__()
+
+        self.block1 = nn.Sequential(
+            # conv1
+            CnnBlock(1, in_features, 64),
+            CnnBlock(2, 64, 64),
+
+            # pool1
+            nn.MaxPool2d(kernel_size=2, stride=2, padding=1),
+
+            # conv2
+            CnnBlock(3, 64, 128),
+
+            # pool2
+            nn.MaxPool2d(kernel_size=2, stride=2, padding=1),
+
+            # conv3
+            CnnBlock(4, 128, 128),
+            CnnBlock(5, 128, 256),
+
+            # pool3
+            nn.MaxPool2d(kernel_size=2, stride=2, padding=1),
+
+            # conv4
+            CnnBlock(6, 256, 512),
+            CnnBlock(7, 512, 512)  # shortcut to up-conv1
+
+        )
+
+        self.block2 = nn.Sequential(
+
+            # pool4
+            nn.MaxPool2d(kernel_size=2, stride=2, padding=1),
+
+            # conv5
+            CnnBlock(8, 512, 512),
+            CnnBlock(9, 512, 512)  # shortcut to up-conv2
+
+        )
+
+        self.block3 = nn.Sequential(
+
+            # pool5
+            nn.MaxPool2d(kernel_size=2, stride=2, padding=1),
+
+            # conv6
+            CnnBlock(10, 512, 1024),
+            CnnBlock(11, 1024, 1024)  # shortcut to up-conv3
+        )
+
+        self.block4 = UpConvBlock(1024, 1024, (224, 332))
+
+        self.block5 = UpConvBlock(512, 512, (224, 332))
+
+        self.block6 = UpConvBlock(512, 512, (224, 332))
+
+        self.block7 = nn.Sequential(
+            CnnBlock(12, 2048, 1024),
+            nn.Conv2d(1024, 2, kernel_size=1, stride=1, padding=0, bias=False),  # 2 classes
+            nn.Softmax2d()
+        )
+
+    def forward(self, x, i):
+        block1out = self.block1(x)
+        block2out = self.block2(block1out)
+        block3out = self.block3(block2out)
+
+        # upconvolution
+        block4out = self.block4(block3out)
+        block5out = self.block5(block2out)
+        block6out = self.block6(block1out)
+
+        # concatenate results
+        concatenated = torch.cat((block4out, block5out, block6out), dim=1)  # channels are the second dimension
+
+        block7out = self.block7(concatenated)
+
+        if i == 0:
+            logging.info(f'block1out.shape:{block1out.shape}')
+            logging.info(f'block2out.shape:{block2out.shape}')
+            logging.info(f'block3out.shape:{block3out.shape}')
+            logging.info(f'block4out.shape:{block4out.shape}')
+            logging.info(f'block5out.shape:{block5out.shape}')
+            logging.info(f'block6out.shape:{block6out.shape}')
+            logging.info(f'concatenated.shape:{concatenated.shape}')
+            logging.info(f'block7out.shape:{block7out.shape}')
+
+        return block7out
+
+
+# EN model from paper "Deep Adversarial Networks for Biomedical Image Segmentation Utilizing Unannotated Images"
+class ZhengEN(nn.Module):
+    def __init__(self, en_input_features=4):
+        super().__init__()
+
+        self.block1 = nn.Sequential(
+
+            # conv1
+            CnnBlock(1, en_input_features, 64),
+            CnnBlock(2, 64, 64),
+
+            # pool1
+            nn.MaxPool2d(kernel_size=2, stride=2, padding=1),
+
+            # conv2
+            CnnBlock(3, 64, 128),
+
+            # pool2
+            nn.MaxPool2d(kernel_size=2, stride=2, padding=1),
+
+            # conv3
+            CnnBlock(4, 128, 256),
+            CnnBlock(5, 256, 256),
+
+            # pool3
+            nn.MaxPool2d(kernel_size=2, stride=2, padding=1),
+
+            # conv4
+            CnnBlock(6, 256, 512),
+            CnnBlock(7, 512, 512),
+
+            # pool4
+            nn.MaxPool2d(kernel_size=2, stride=2, padding=1),
+
+            # conv5
+            CnnBlock(8, 512, 512),
+            CnnBlock(9, 512, 512)
+
+        )
+
+        self.block2 = nn.Sequential(
+
+            nn.Flatten(),  # need to convert 2d to 1d
+
+        )
+
+        self.block3 = nn.Sequential(
+            LinearBlock(168960, 256),  # 512*15*22
             LinearBlock(256, 128),
             LinearBlock(128, 64),
             nn.Linear(64, 1),  # binary classes
