@@ -16,13 +16,13 @@ class ModelHandler:
         if wandb_config.sn_model_type == 'SNLite':
             sn = SNLite()
         elif wandb_config.sn_model_type == 'ConcatenationFCN':
-            num_fcn_blocks = wandb_config.num_fcn_blocks
-            block_depth = wandb_config.block_depth
-            input_channels = wandb_config.input_channels
-            output_channels = wandb_config.output_channels
-            first_layer_out_channels = wandb_config.first_layer_out_channels
-            block_pattern = wandb_config.block_pattern
-            upsampling_pattern = wandb_config.upsampling_pattern
+            num_fcn_blocks = wandb_config.sn_num_fcn_blocks
+            block_depth = wandb_config.sn_block_depth
+            input_channels = wandb_config.sn_input_channels
+            output_channels = wandb_config.sn_output_channels
+            first_layer_out_channels = wandb_config.sn_first_layer_out_channels
+            block_pattern = wandb_config.sn_block_pattern
+            upsampling_pattern = wandb_config.sn_upsampling_pattern
             original_height = wandb_config.original_height
             original_width = wandb_config.original_width
 
@@ -37,8 +37,22 @@ class ModelHandler:
 
         if wandb_config.en_model_type == 'ENLite':
             en = ENLite()
-        elif wandb_config.sn_model_type == 'ZhengEN':
+        elif wandb_config.en_model_type == 'ZhengEN':
             en = ZhengEN()
+        elif wandb_config.en_model_type == 'FlexVGG':
+
+            num_fcn_blocks = wandb_config.en_num_fcn_blocks
+            depth_fcn_block = wandb_config.en_depth_fcn_block
+            input_channels = wandb_config.en_input_channels
+            first_layer_out_channels = wandb_config.en_first_layer_out_channels
+            block_pattern = wandb_config.en_block_pattern
+            depth_linear_block = wandb_config.depth_linear_block
+            linear_block_pattern = wandb_config.linear_block_pattern
+            first_linear_layer_out_features = wandb_config.first_linear_layer_out_features
+            out_features = wandb_config.out_features
+
+            en = FlexVGG(num_fcn_blocks, depth_fcn_block, input_channels, first_layer_out_channels, block_pattern,
+                         depth_linear_block, linear_block_pattern, first_linear_layer_out_features, out_features)
 
         logging.info(f'Generator model initialized:\n{sn}')
         logging.info(f'Discriminator model initialized:\n{en}')
@@ -587,5 +601,177 @@ class ConcatenationFCN(nn.Module):
         x = torch.cat(up_tuple, dim=1)  # channels are the second dimension
 
         x = self.map_block(x)
+
+        return x
+
+
+def _generate_linear_size_lists(in_size, linear_pattern, block_depth):
+    in_sizes_list = []
+    out_sizes_list = []
+
+    # calculate channels sizes for block based on block pattern
+    current_in_size = in_size
+    current_out_size = current_in_size
+    if linear_pattern == 'single_run':
+
+        # out size is half the in size of that layer
+        # for block_depth = 3
+        # in_channels_list  [ 64, 32, 16]
+        # out_channels_list [ 32, 16, 8]
+        for each in range(block_depth):
+            # in size
+            in_sizes_list.append(current_in_size)  # match output channels of previous layer
+            current_out_size = int(current_out_size / 2)  # output is half the input
+
+            # out size
+            out_sizes_list.append(current_out_size)
+            current_in_size = current_out_size
+
+    return in_sizes_list, out_sizes_list
+
+
+def _calc_conversion_feature_size(num_fcn_blocks, depth_fcn_block, first_layer_out_channels, block_pattern):
+    """
+    This is a temporary workaround because LazyLinear allocates way too much memory when performing the dummy forward() pass to determine in_features.
+    Args:
+        num_fcn_blocks:
+        depth_fcn_block:
+        first_layer_out_channels:
+        block_pattern:
+
+    Returns:
+
+    """
+    width_times_height = 0
+    if block_pattern == 'single_run':
+        if num_fcn_blocks == 1:
+            width_times_height = 224 * 332
+        elif num_fcn_blocks == 2:
+            width_times_height = 113 * 167
+        elif num_fcn_blocks == 3:
+            width_times_height = 57 * 84
+    elif block_pattern == 'double_run':
+        if depth_fcn_block == 2:
+            if num_fcn_blocks == 4:
+                width_times_height = 29 * 43
+
+
+    channels = 0
+    if block_pattern == 'single_run':
+        if depth_fcn_block == 1:
+            if num_fcn_blocks == 1:
+                channels = 128
+            elif num_fcn_blocks == 2:
+                channels = 256
+            elif num_fcn_blocks == 3:
+                channels = 512
+        elif depth_fcn_block == 2:
+            if num_fcn_blocks == 1:
+                channels = 256
+            elif num_fcn_blocks == 2:
+                channels = 1024
+            elif num_fcn_blocks == 3:
+                channels = 4096
+    elif block_pattern == 'double_run':
+        if depth_fcn_block == 2:
+            if num_fcn_blocks == 4:
+                channels = 1024
+
+    return channels * width_times_height
+
+
+class FlexVGG(nn.Module):
+    def __init__(self, num_fcn_blocks=1, depth_fcn_block=1, input_channels=4, first_layer_out_channels=64,
+                 fcn_block_pattern='single_run', depth_linear_block=1, linear_block_pattern='single_run',
+                 first_linear_layer_out_features=64, out_features=1):
+        super().__init__()
+
+        self.fcn_block_pattern = fcn_block_pattern
+
+        # add input block
+        block_number = 0
+        self.input_block = CnnBlock(block_number, input_channels, first_layer_out_channels)
+
+        # add fcn block
+        fcn_blocks = []
+        curr_in_channels = first_layer_out_channels
+        pool_layer_first = False  # first FCN block doesn't start with pool
+
+        for i in range(1, num_fcn_blocks + 1):
+            # create block
+            block_number = i
+            block = FcnBlock(block_number, curr_in_channels, pool_layer_first, depth_fcn_block, fcn_block_pattern)
+            fcn_blocks.append(block)
+
+            # update settings for next block
+            curr_in_channels = block.out_channels
+            pool_layer_first = True  # all additional FCN blocks start with a pooling layer
+
+        self.fcn_block = nn.ModuleList(fcn_blocks)
+
+        self.flatten_block = nn.Flatten()
+
+        # add linear block to convert between 2d fcn output and 1d classifier block
+        # input size after flattening is difficult to calculate, so use a lazy linear layer to calculate for you
+        conversion_features = _calc_conversion_feature_size(num_fcn_blocks, depth_fcn_block, first_layer_out_channels,
+                                                            fcn_block_pattern)
+        logging.info(f'conversion_features:{conversion_features}')
+        self.conversion_block = nn.Sequential()
+        self.conversion_block.add_module('linear', nn.Linear(conversion_features, first_linear_layer_out_features))
+        self.conversion_block.add_module('bn', nn.BatchNorm1d(first_linear_layer_out_features))
+        self.conversion_block.add_module('activation', nn.ReLU(inplace=True))
+
+        # build classifier block
+        # calculate linear in and out sizes according to the
+        in_sizes_list, out_sizes_list = _generate_linear_size_lists(first_linear_layer_out_features,
+                                                                    linear_block_pattern, depth_linear_block)
+
+        classifier_block = []
+        for i in range(depth_linear_block):
+            in_size = in_sizes_list[i]
+            out_size = out_sizes_list[i]
+            lb = LinearBlock(in_size, out_size)
+            classifier_block.append(lb)
+
+        # add final linear layer that classifies input into binary classes
+        # final linear layer does not have batch normalization
+        # final linear layer uses sigmoid activation function
+        lb = LinearBlock(out_sizes_list[-1], out_features, batchnorm=False, activation='sigmoid')
+        classifier_block.append(lb)
+
+        self.classifier_block = nn.ModuleList(classifier_block)
+
+    def forward(self, x, i):
+        if i == 0:
+            logging.info(f'x:{x.shape}')
+
+        # input block
+        x = self.input_block(x)
+
+        if i == 0:
+            logging.info(f'input_block:{x.shape}')
+
+        # fcn blocks
+        for fcn in self.fcn_block:
+            x = fcn(x)
+
+            if i == 0:
+                logging.info(f'fcn:{x.shape}')
+
+        x = self.flatten_block(x)
+
+        if i == 0:
+            logging.info(f'flatten_block:{x.shape}')
+
+        x = self.conversion_block(x)
+
+        if i == 0:
+            logging.info(f'conversion_block:{x.shape}')
+
+        for lin in self.classifier_block:
+            x = lin(x)
+
+            if i == 0:
+                logging.info(f'lin:{x.shape}')
 
         return x

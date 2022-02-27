@@ -251,10 +251,10 @@ class Training:
         d_input = _combine_input_and_map(unannotated_inputs, unannotated_out.unsqueeze(1))  # unsqueeze to match inputs
 
         # forward pass
-        unannotated_pred = d_model(d_input.detach(), i)  # detach to not affect generator?
+        pred = d_model(d_input.detach(), i)  # detach to not affect generator?
 
         # calculate loss
-        d_loss_unannotated = _d_loss(unannotated_pred, self.en_criterion, annotated=False)
+        d_loss_unannotated = _d_loss(pred, self.en_criterion, annotated=False)
 
         # 2 - compute forward pass on discriminator using annotated data
         # combine inputs and probability map
@@ -263,10 +263,10 @@ class Training:
         d_input = _combine_input_and_map(annotated_inputs, annotated_targets.unsqueeze(1))  # unsqueeze to match inputs
 
         # forward pass
-        annotated_pred = d_model(d_input.detach(), i)  # detach to not affect generator?
+        pred = d_model(d_input.detach(), i)  # detach to not affect generator?
 
         # calculate loss
-        d_loss_annotated = _d_loss(annotated_pred, self.en_criterion, annotated=True)
+        d_loss_annotated = _d_loss(pred, self.en_criterion, annotated=True)
 
         # 3 - update discriminator based on loss
         # calculate total discriminator loss for unannotated and annotated data
@@ -283,11 +283,11 @@ class Training:
         d_input = _combine_input_and_map(inputs, unannotated_out.unsqueeze(1))  # unsqueeze to match inputs
 
         # forward pass
-        fake_pred = d_model(d_input, i)  # leave attached so backpropagation through discriminator affects generator
+        pred = d_model(d_input, i)  # leave attached so backpropagation through discriminator affects generator
 
         # calculate generator loss based on discriminator predictions
         # if discriminator predicts unannotated correctly, generator not doing good enough job
-        total_g_loss = g_loss + sigma * _d_loss(fake_pred, self.en_criterion, annotated=True)
+        total_g_loss = g_loss + sigma * _d_loss(pred, self.en_criterion, annotated=True)
 
         return total_g_loss, d_loss_unannotated, d_loss_annotated, d_loss
 
