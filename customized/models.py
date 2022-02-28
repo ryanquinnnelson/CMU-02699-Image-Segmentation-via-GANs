@@ -654,7 +654,10 @@ def _calc_conversion_feature_size(num_fcn_blocks, depth_fcn_block, first_layer_o
         if depth_fcn_block == 2:
             if num_fcn_blocks == 4:
                 width_times_height = 29 * 43
-
+            elif num_fcn_blocks == 5:
+                width_times_height = 15 * 22
+            elif num_fcn_blocks == 6:
+                width_times_height = 8 * 12
 
     channels = 0
     if block_pattern == 'single_run':
@@ -676,6 +679,10 @@ def _calc_conversion_feature_size(num_fcn_blocks, depth_fcn_block, first_layer_o
         if depth_fcn_block == 2:
             if num_fcn_blocks == 4:
                 channels = 1024
+            elif num_fcn_blocks == 5:
+                channels = 2048
+            elif num_fcn_blocks == 6:
+                channels = 4096
 
     return channels * width_times_height
 
