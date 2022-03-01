@@ -45,11 +45,11 @@ class ModelHandler:
             depth_fcn_block = wandb_config.en_depth_fcn_block
             input_channels = wandb_config.en_input_channels
             first_layer_out_channels = wandb_config.en_first_layer_out_channels
-            block_pattern = wandb_config.en_block_pattern
-            depth_linear_block = wandb_config.depth_linear_block
-            linear_block_pattern = wandb_config.linear_block_pattern
-            first_linear_layer_out_features = wandb_config.first_linear_layer_out_features
-            out_features = wandb_config.out_features
+            block_pattern = wandb_config.en_fcn_block_pattern
+            depth_linear_block = wandb_config.en_depth_linear_block
+            linear_block_pattern = wandb_config.en_linear_block_pattern
+            first_linear_layer_out_features = wandb_config.en_first_linear_layer_out_features
+            out_features = wandb_config.en_out_features
 
             en = FlexVGG(num_fcn_blocks, depth_fcn_block, input_channels, first_layer_out_channels, block_pattern,
                          depth_linear_block, linear_block_pattern, first_linear_layer_out_features, out_features)
