@@ -643,46 +643,48 @@ def _calc_conversion_feature_size(num_fcn_blocks, depth_fcn_block, first_layer_o
 
     """
     width_times_height = 0
-    if block_pattern == 'single_run':
-        if num_fcn_blocks == 1:
-            width_times_height = 224 * 332
-        elif num_fcn_blocks == 2:
-            width_times_height = 113 * 167
-        elif num_fcn_blocks == 3:
-            width_times_height = 57 * 84
-    elif block_pattern == 'double_run':
-        if depth_fcn_block == 2:
-            if num_fcn_blocks == 4:
-                width_times_height = 29 * 43
-            elif num_fcn_blocks == 5:
-                width_times_height = 15 * 22
-            elif num_fcn_blocks == 6:
-                width_times_height = 8 * 12
+    if first_layer_out_channels == 64:
+        if block_pattern == 'single_run':
+            if num_fcn_blocks == 1:
+                width_times_height = 224 * 332
+            elif num_fcn_blocks == 2:
+                width_times_height = 113 * 167
+            elif num_fcn_blocks == 3:
+                width_times_height = 57 * 84
+        elif block_pattern == 'double_run':
+            if depth_fcn_block == 2:
+                if num_fcn_blocks == 4:
+                    width_times_height = 29 * 43
+                elif num_fcn_blocks == 5:
+                    width_times_height = 15 * 22
+                elif num_fcn_blocks == 6:
+                    width_times_height = 8 * 12
 
     channels = 0
-    if block_pattern == 'single_run':
-        if depth_fcn_block == 1:
-            if num_fcn_blocks == 1:
-                channels = 128
-            elif num_fcn_blocks == 2:
-                channels = 256
-            elif num_fcn_blocks == 3:
-                channels = 512
-        elif depth_fcn_block == 2:
-            if num_fcn_blocks == 1:
-                channels = 256
-            elif num_fcn_blocks == 2:
-                channels = 1024
-            elif num_fcn_blocks == 3:
-                channels = 4096
-    elif block_pattern == 'double_run':
-        if depth_fcn_block == 2:
-            if num_fcn_blocks == 4:
-                channels = 1024
-            elif num_fcn_blocks == 5:
-                channels = 2048
-            elif num_fcn_blocks == 6:
-                channels = 4096
+    if first_layer_out_channels == 64:
+        if block_pattern == 'single_run':
+            if depth_fcn_block == 1:
+                if num_fcn_blocks == 1:
+                    channels = 128
+                elif num_fcn_blocks == 2:
+                    channels = 256
+                elif num_fcn_blocks == 3:
+                    channels = 512
+            elif depth_fcn_block == 2:
+                if num_fcn_blocks == 1:
+                    channels = 256
+                elif num_fcn_blocks == 2:
+                    channels = 1024
+                elif num_fcn_blocks == 3:
+                    channels = 4096
+        elif block_pattern == 'double_run':
+            if depth_fcn_block == 2:
+                if num_fcn_blocks == 4:
+                    channels = 1024
+                elif num_fcn_blocks == 5:
+                    channels = 2048
+                elif num_fcn_blocks == 6:
+                    channels = 4096
 
     return channels * width_times_height
 
