@@ -35,13 +35,18 @@ class OptimizerHandler:
 
         optimizers = []
         optimizer_names = ['sn_optimizer', 'en_optimizer']
-        for model in models:
-            opt = self.get_optimizer(model, wandb_config)
+        model_type = None
+        for i, model in enumerate(models):
+            if i == 0:
+                model_type = 'sn'
+            elif i == 1:
+                model_type = 'en'
+            opt = self.get_optimizer(model, wandb_config, model_type)
             optimizers.append(opt)
 
         return optimizers, optimizer_names
 
-    def get_optimizer(self, model, wandb_config):
+    def get_optimizer(self, model, wandb_config, model_type):
         """
         Obtain the optimizer based on parameters.
         Args:
@@ -51,12 +56,16 @@ class OptimizerHandler:
         Returns: nn.optim optimizer
         """
         opt = None
+        lr = None
+        if model_type == 'sn':
+            lr = wandb_config.sn_lr
+        elif model_type == 'en':
+            lr = wandb_config.en_lr
+
         if wandb_config.optimizer_type == 'adam':
-            lr = wandb_config.lr
             opt = optim.Adam(model.parameters(), lr=lr)
 
         elif wandb_config.optimizer_type == 'sgd':
-            lr = wandb_config.lr
             opt = optim.SGD(model.parameters(), lr=lr)
 
         logging.info(f'Optimizer initialized:\n{opt}')

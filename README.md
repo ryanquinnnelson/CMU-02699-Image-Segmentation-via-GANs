@@ -2,20 +2,8 @@
 
 Spring 2022 Bioimage Informatics (Self-Study) project
 
-## Summary
 This project explores using a deep generative adversarial network (GAN) to perform semi-supervised image segmentation on the 2015 MICCAI Gland Challenge dataset.
 
-The following generative model architectures are explored:
-- ZhengSN
-- ConcatenationFCN
-- (future) SummationFCN
-- (future) U-Net
-
-
-The following discriminative model architectures are explored:
-- ZhengEN
-- FlexVGG
-- (future) VGG16
 
 ## Run single run
 
@@ -62,4 +50,5 @@ organized into local and remote configs.
 
 Sweeps are a tool wandb uses to search over a hyperparameter space. For this project, sweep configuration files are
 organized into local and remote sweeps.
+
 
