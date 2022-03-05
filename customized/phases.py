@@ -270,9 +270,7 @@ class Training:
 
         # 3 - update discriminator based on loss
         # calculate total discriminator loss for unannotated and annotated data
-        sigma = self.sigma
-        sigma += (epoch / self.sigma_weight)  # add more weight each time
-        d_loss = sigma * (d_loss_unannotated + d_loss_annotated)  # Should we consider sigma here or only for generator?
+        d_loss = d_loss_unannotated + d_loss_annotated
         d_loss.backward()
         d_optimizer.step()
 
@@ -287,6 +285,8 @@ class Training:
 
         # calculate generator loss based on discriminator predictions
         # if discriminator predicts unannotated correctly, generator not doing good enough job
+        sigma = self.sigma
+        sigma += (epoch / self.sigma_weight)  # add more weight each time
         total_g_loss = g_loss + sigma * _d_loss(pred, self.en_criterion, annotated=True)
 
         return total_g_loss, d_loss_unannotated, d_loss_annotated, d_loss
@@ -330,13 +330,16 @@ class Validation:
         total_val_loss = 0
         total_hits = 0
         total_iou_score = 0
+        n_correct_predictions = 0
         out_shape = None  # save for calculating total number of pixels per image
 
         g_model = models[0]
+        d_model = models[1]
         with torch.no_grad():  # deactivate autograd engine to improve efficiency
 
             # Set model in validation mode
             g_model.eval()
+            d_model.eval()
 
             # process mini-batches
             for i, (inputs, targets) in enumerate(self.dataloader):
@@ -345,7 +348,7 @@ class Validation:
                 # prep
                 inputs, targets = self.devicehandler.move_data_to_device(g_model, inputs, targets)
 
-                # compute forward pass
+                # compute forward pass on generator
                 out = g_model.forward(inputs, i)
                 out_shape = out.shape
 
@@ -354,7 +357,7 @@ class Validation:
                     logging.info(f'targets.shape:{targets.shape}')
                     logging.info(f'out.shape:{out.shape}')
 
-                # calculate loss
+                # calculate generator loss
                 loss = self.criterion(out, targets)
                 total_val_loss += loss.item()
 
@@ -362,19 +365,59 @@ class Validation:
                 total_hits += _calculate_num_hits(i, targets, out)
                 total_iou_score += _calculate_iou_score(i, targets, out)
 
+                # compute forward pass on discriminator
+                # select subset of mini-batch to be unannotated vs annotated at random
+                unannotated_idx = np.random.choice(len(inputs), size=int(len(inputs) / 2), replace=False)
+                annotated_idx = np.delete(np.array([k for k in range(len(inputs))]), unannotated_idx)
+
+                # 1 - compute forward pass on discriminator using unannotated data
+                # combine inputs and probability map
+                unannotated_inputs = inputs[unannotated_idx]  # (B, C, H, W)
+                unannotated_out = out[unannotated_idx, 0, :, :]  # 1 class to match inputs + targets shape, (B, H, W)
+                d_input = _combine_input_and_map(unannotated_inputs,
+                                                 unannotated_out.unsqueeze(1))  # unsqueeze to match inputs
+                # forward pass
+                pred = d_model(d_input, i)
+
+                # count number of predictions that accurately predict unannotated
+                n_correct_predictions += torch.sum(pred < 0.5).item()  # d_model should predict 0 for unannotated
+
+                if i == 0:
+                    logging.info(f'pred:{pred}')
+                    logging.info(f'n_correct_predictions:{n_correct_predictions}')
+
+                # 2 - compute forward pass on discriminator using annotated data
+                # combine inputs and probability map
+                annotated_inputs = inputs[annotated_idx]  # (B, C, H, W)
+                annotated_targets = targets[annotated_idx]  # (B, H, W) targets only has a single class
+                d_input = _combine_input_and_map(annotated_inputs,
+                                                 annotated_targets.unsqueeze(1))  # unsqueeze to match inputs
+
+                # forward pass
+                pred = d_model(d_input, i)
+
+                # count number of predictions that accurately predict unannotated
+                n_correct_predictions += torch.sum(pred >= 0.5).item()  # d_model should predict 1 for annotated
+
+                if i == 0:
+                    logging.info(f'pred:{pred}')
+                    logging.info(f'n_correct_predictions:{n_correct_predictions}')
+
                 # delete mini-batch from device
                 del inputs
                 del targets
 
-            # calculate average evaluation metrics per mini-batch
+            # calculate average generator evaluation metrics per mini-batch
             pixels_per_image = out_shape[2] * out_shape[3]
             possible_hits = len(self.dataloader.dataset) * pixels_per_image
             val_acc = total_hits / possible_hits
             total_val_loss /= len(self.dataloader)
             total_iou_score /= len(self.dataloader.dataset)
+            discriminator_acc = n_correct_predictions / len(self.dataloader)
 
             # build stats dictionary
-            stats = {'val_loss': total_val_loss, 'val_acc': val_acc, 'val_iou_score': total_iou_score}
+            stats = {'val_loss': total_val_loss, 'val_acc': val_acc, 'val_iou_score': total_iou_score,
+                     'discriminator_acc': discriminator_acc}
 
             return stats
 

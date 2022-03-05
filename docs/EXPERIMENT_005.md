@@ -128,4 +128,13 @@ performs much worse
 - **todo try leaving all channels the same for EN too
 - **try even smaller values for sigma_weight
 - **try even smaller values for sigma
+- Best configurations
+	- en_num_fcn_blocks: 4
+	- en_depth_fcn_block=2
+	- en_first_layer_out_channels=64
+	- en_fcn_block_pattern=double_run
+	- en_depth_linear_block: 1
+	- en_first_linear_layer_out_features: 128
+	- en_linear_block_pattern=single_run
+
 

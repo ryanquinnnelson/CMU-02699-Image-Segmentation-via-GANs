@@ -87,9 +87,9 @@ I rebuilt the framework, added a flexible version of the paper's SN model, and I
 ## Best model
 - Run Name: FCNOnly-001_BEST
 - Epoch: 15
-- val_iou_score: 0.3411
-- val_loss: 0.5121
-- val_acc: 0.788
+- val_iou_score: 0.3637
+- val_loss: 0.4743
+- val_acc: 0.8312
 
 
 ## overall takeaways
@@ -106,7 +106,12 @@ I rebuilt the framework, added a flexible version of the paper's SN model, and I
 
 - same number of channels across the board seems just as good as larger number each time, can allow for very deep models, larger number of fcn_blocks is better
 -**try very deep models with same number of channels for each fcn_block and more than 6 fcn_blocks
-
+	- did find that with 64 channels, more than 5 blocks doesn't help
+- best configs
+	- sn_fcn_blocks=5
+	- sn_block_pattern=double_run
+	- sn_first_layer_out_channels=64
+	- sn_block_depth=1
 
 
 

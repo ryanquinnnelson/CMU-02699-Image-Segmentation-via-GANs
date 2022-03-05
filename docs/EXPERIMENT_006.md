@@ -45,7 +45,7 @@ Try controlling learning rate for EN and SN differently. Set EN learning rate at
 	- gan_start_epoch=40
 
 ## Best model
-- Run Name: GAN_Concat_Flex_008
+- Run Name: GAN_Concat_Flex_008_BEST
 - Epoch: 100
 
 
