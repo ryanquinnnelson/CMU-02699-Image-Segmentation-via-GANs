@@ -223,10 +223,11 @@ class Training:
             total_g_train_loss += g_loss.item()
 
         # calculate average loss across all mini-batches
-        total_g_train_loss /= len(self.dataloader)
-        total_d_train_loss /= len(self.dataloader)
-        total_d_train_loss_unannotated /= len(self.dataloader)
-        total_d_train_loss_annotated /= len(self.dataloader)
+        n_mini_batches = len(self.dataloader)
+        total_g_train_loss /= n_mini_batches
+        total_d_train_loss /= n_mini_batches
+        total_d_train_loss_unannotated /= n_mini_batches
+        total_d_train_loss_annotated /= n_mini_batches
 
         # build stat dictionary
         g_lr = g_optimizer.state_dict()["param_groups"][0]["lr"]
@@ -332,6 +333,7 @@ class Validation:
         total_iou_score = 0
         n_correct_predictions = 0
         out_shape = None  # save for calculating total number of pixels per image
+        total_inputs = 0
 
         g_model = models[0]
         d_model = models[1]
@@ -344,6 +346,7 @@ class Validation:
             # process mini-batches
             for i, (inputs, targets) in enumerate(self.dataloader):
                 logging.info(f'validation batch:{i}')
+                total_inputs += len(inputs)
 
                 # prep
                 inputs, targets = self.devicehandler.move_data_to_device(g_model, inputs, targets)
@@ -383,7 +386,7 @@ class Validation:
                 n_correct_predictions += torch.sum(pred < 0.5).item()  # d_model should predict 0 for unannotated
 
                 if i == 0:
-                    logging.info(f'pred:{pred}')
+                    logging.info(f'fake pred:{pred.detach()}')
                     logging.info(f'n_correct_predictions:{n_correct_predictions}')
 
                 # 2 - compute forward pass on discriminator using annotated data
@@ -400,7 +403,7 @@ class Validation:
                 n_correct_predictions += torch.sum(pred >= 0.5).item()  # d_model should predict 1 for annotated
 
                 if i == 0:
-                    logging.info(f'pred:{pred}')
+                    logging.info(f'real pred:{pred.detach()}')
                     logging.info(f'n_correct_predictions:{n_correct_predictions}')
 
                 # delete mini-batch from device
@@ -408,12 +411,18 @@ class Validation:
                 del targets
 
             # calculate average generator evaluation metrics per mini-batch
+            n_mini_batches = len(self.dataloader)
             pixels_per_image = out_shape[2] * out_shape[3]
-            possible_hits = len(self.dataloader.dataset) * pixels_per_image
+            possible_hits = total_inputs * pixels_per_image
             val_acc = total_hits / possible_hits
-            total_val_loss /= len(self.dataloader)
-            total_iou_score /= len(self.dataloader.dataset)
-            discriminator_acc = n_correct_predictions / len(self.dataloader)
+            total_val_loss /= n_mini_batches
+            total_iou_score /= n_mini_batches
+            discriminator_acc = n_correct_predictions / total_inputs
+
+
+            logging.info(f'total_inputs:{total_inputs}')
+            logging.info(f'len(self.dataloader):{len(self.dataloader)}')
+            logging.info(f'len(self.dataloader.dataset):{len(self.dataloader.dataset)}')
 
             # build stats dictionary
             stats = {'val_loss': total_val_loss, 'val_acc': val_acc, 'val_iou_score': total_iou_score,
