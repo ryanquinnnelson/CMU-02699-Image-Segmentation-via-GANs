@@ -1,5 +1,5 @@
 [DEFAULT]
-run_name = ZhengGAN-001
+run_name = ConcatenationFCN-004
 
 
 [debug]
@@ -53,12 +53,13 @@ batch_size=2
 
 # TODO: avoid specifying original_width and original_height; calculate from resize_height
 [model]	
-sn_model_type=ZhengSN
+sn_model_type=ConcatenationFCN
+sn_input_block_depth=1
 sn_num_fcn_blocks=5
-sn_block_depth=1
+sn_fcn_block_depth=2
 sn_input_channels=3
 sn_output_channels=2
-sn_first_layer_out_channels=64
+sn_first_layer_out_channels=32
 sn_block_pattern=double_run
 sn_upsampling_pattern=last_three
 original_height=224

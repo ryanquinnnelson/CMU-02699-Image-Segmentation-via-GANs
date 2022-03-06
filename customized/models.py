@@ -16,8 +16,9 @@ class ModelHandler:
         if wandb_config.sn_model_type == 'SNLite':
             sn = SNLite()
         elif wandb_config.sn_model_type == 'ConcatenationFCN':
+            input_block_depth = wandb_config.sn_input_block_depth
             num_fcn_blocks = wandb_config.sn_num_fcn_blocks
-            block_depth = wandb_config.sn_block_depth
+            fcn_block_depth = wandb_config.sn_fcn_block_depth
             input_channels = wandb_config.sn_input_channels
             output_channels = wandb_config.sn_output_channels
             first_layer_out_channels = wandb_config.sn_first_layer_out_channels
@@ -26,7 +27,7 @@ class ModelHandler:
             original_height = wandb_config.original_height
             original_width = wandb_config.original_width
 
-            sn = ConcatenationFCN(num_fcn_blocks, block_depth, input_channels, output_channels,
+            sn = ConcatenationFCN(input_block_depth, num_fcn_blocks, fcn_block_depth, input_channels, output_channels,
                                   first_layer_out_channels, block_pattern, upsampling_pattern, original_height,
                                   original_width)
 
@@ -444,10 +445,9 @@ def _generate_channels_lists(in_channels, block_pattern, block_depth):
 
 class FcnBlock(nn.Module):
 
-    def __init__(self, block_number, in_channels, pool_layer_first, block_depth, block_pattern,
+    def __init__(self, block_number, in_channels, block_depth, block_pattern,
                  kernel_size=3, stride=1, padding=1):
         super().__init__()
-        #         print('init')
 
         # calculate sizes for input and output channels for all cnn layers in this block
         in_channels_list, out_channels_list = _generate_channels_lists(in_channels, block_pattern, block_depth)
@@ -459,9 +459,7 @@ class FcnBlock(nn.Module):
 
         # build block
         self.fcn_block = nn.Sequential()
-
-        if pool_layer_first:
-            self.fcn_block.add_module('pool' + str(block_number), nn.MaxPool2d(kernel_size=2, stride=2, padding=1))
+        self.fcn_block.add_module('pool' + str(block_number), nn.MaxPool2d(kernel_size=2, stride=2, padding=1))
 
         # build block one group at a time
         for i, curr_in_channels in enumerate(in_channels_list):
@@ -476,8 +474,6 @@ class FcnBlock(nn.Module):
 
         # initialize weights
         self.fcn_block.apply(_init_weights)
-
-    #         print('applied')
 
     def forward(self, x):
         # logging.info(f'fcn_block_inputx:{x.shape}')
@@ -494,17 +490,17 @@ class FcnBlock(nn.Module):
 # ZhengFCN: concatenates upsampling channels before calculating the 2 class label probabilities
 # DCAN_FCN: calculates 2 class label probabilities for each upsampling channel, then sums probabilities
 class ConcatenationFCN(nn.Module):
-    def __init__(self, num_fcn_blocks=3, block_depth=1, input_channels=3, output_channels=2,
+    def __init__(self, input_block_depth=1, num_fcn_blocks=3, fcn_block_depth=1, input_channels=3, output_channels=2,
                  first_layer_out_channels=64,
                  block_pattern='single_run', upsampling_pattern='last_three', original_height=224, original_width=332):
         """
 
         Args:
-            n_blocks:  4,5,6 number of cnn blocks in network
-            block_depth: 1, 2, 3, 4 number of cnn layers in a block
+            num_fcn_blocks:  4,5,6 number of cnn blocks in network
+            fcn_block_depth: 1, 2, 3, 4 number of cnn layers in a block
             input_channels: 3 channels in original image
             output_channels: 2 number of classes to softmax
-            start_channels: 64
+            first_layer_out_channels: 64
             block_pattern: single_run, double_run, dcan_run,
             upsampling_pattern: last_three, last_two
             original_height: 224 upsampling to restore image to this size
@@ -517,22 +513,29 @@ class ConcatenationFCN(nn.Module):
 
         # add input block
         block_number = 0
-        self.input_block = CnnBlock(block_number, input_channels, first_layer_out_channels)
+        self.input_block = nn.Sequential()
+        curr_in_channels = input_channels
+        curr_out_channels = first_layer_out_channels
+
+        for i in range(input_block_depth):
+            cnn_block = CnnBlock(block_number, curr_in_channels, curr_out_channels)
+            self.input_block.add_module('cnn' + str(i), cnn_block)
+
+            # all remaining cnn blocks in the input block have matching input and output channels
+            curr_in_channels = cnn_block.out_channels
 
         # add FCN blocks
         fcn_blocks = []
         curr_in_channels = first_layer_out_channels
-        pool_layer_first = False  # first FCN block doesn't start with pool
 
         for n in range(1, num_fcn_blocks + 1):
             # create block
             block_number = n
-            block = FcnBlock(block_number, curr_in_channels, pool_layer_first, block_depth, block_pattern)
+            block = FcnBlock(block_number, curr_in_channels, fcn_block_depth, block_pattern)
             fcn_blocks.append(block)
 
             # update settings for next block
             curr_in_channels = block.out_channels
-            pool_layer_first = True  # all additional FCN blocks start with a pooling layer
 
         # subdivide fcn blocks based on connections to upsampling blocks
         self.fcn1 = None
@@ -704,17 +707,15 @@ class FlexVGG(nn.Module):
         # add fcn block
         fcn_blocks = []
         curr_in_channels = first_layer_out_channels
-        pool_layer_first = False  # first FCN block doesn't start with pool
 
         for i in range(1, num_fcn_blocks + 1):
             # create block
             block_number = i
-            block = FcnBlock(block_number, curr_in_channels, pool_layer_first, depth_fcn_block, fcn_block_pattern)
+            block = FcnBlock(block_number, curr_in_channels, depth_fcn_block, fcn_block_pattern)
             fcn_blocks.append(block)
 
             # update settings for next block
             curr_in_channels = block.out_channels
-            pool_layer_first = True  # all additional FCN blocks start with a pooling layer
 
         self.fcn_block = nn.ModuleList(fcn_blocks)
 

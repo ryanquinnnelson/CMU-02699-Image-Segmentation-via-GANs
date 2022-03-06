@@ -4,7 +4,7 @@ Trying a model that uses fcn block depth of 2 instead of 1, which converts model
 ## Notes
 - Run name: GAN_Concat_Flex_018
 - Compare against baseline
-- Had to decrease batch size to 4 to fit within GPU memory, should rerun baseline model with batch size of 4 to make comparison fair
+- Had to decrease batch size to 4 to fit within GPU memory, should rerun baseline model with batch size of 4 to make comparison fair (GAN_Concat_Flex_019_baseline)
 
 ## Hyperparameters
 - Testing:
@@ -16,3 +16,5 @@ Trying a model that uses fcn block depth of 2 instead of 1, which converts model
 
 ## Overall Summary
 - model with larger number of channels takes much longer to train (4x)
+- more channels results in smaller oscillations, but ultimately both models end up at the same scores
+
