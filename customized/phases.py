@@ -311,6 +311,7 @@ class Validation:
         self.devicehandler = devicehandler
         self.dataloader = dataloader
         self.criterion = _get_criterion(wandb_config.sn_criterion)
+        self.use_gan = wandb_config.use_gan
 
         logging.info(f'Criterion for validation phase:\ngenerator:{self.criterion}')
 
@@ -368,43 +369,44 @@ class Validation:
                 total_hits += _calculate_num_hits(i, targets, out)
                 total_iou_score += _calculate_iou_score(i, targets, out)
 
-                # compute forward pass on discriminator
-                # select subset of mini-batch to be unannotated vs annotated at random
-                unannotated_idx = np.random.choice(len(inputs), size=int(len(inputs) / 2), replace=False)
-                annotated_idx = np.delete(np.array([k for k in range(len(inputs))]), unannotated_idx)
+                if self.use_gan:
+                    # compute forward pass on discriminator
+                    # select subset of mini-batch to be unannotated vs annotated at random
+                    unannotated_idx = np.random.choice(len(inputs), size=int(len(inputs) / 2), replace=False)
+                    annotated_idx = np.delete(np.array([k for k in range(len(inputs))]), unannotated_idx)
 
-                # 1 - compute forward pass on discriminator using unannotated data
-                # combine inputs and probability map
-                unannotated_inputs = inputs[unannotated_idx]  # (B, C, H, W)
-                unannotated_out = out[unannotated_idx, 0, :, :]  # 1 class to match inputs + targets shape, (B, H, W)
-                d_input = _combine_input_and_map(unannotated_inputs,
-                                                 unannotated_out.unsqueeze(1))  # unsqueeze to match inputs
-                # forward pass
-                pred = d_model(d_input, i)
+                    # 1 - compute forward pass on discriminator using unannotated data
+                    # combine inputs and probability map
+                    unannotated_inputs = inputs[unannotated_idx]  # (B, C, H, W)
+                    unannotated_out = out[unannotated_idx, 0, :, :]  # 1 class to match inputs + targets shape, (B, H, W)
+                    d_input = _combine_input_and_map(unannotated_inputs,
+                                                     unannotated_out.unsqueeze(1))  # unsqueeze to match inputs
+                    # forward pass
+                    pred = d_model(d_input, i)
 
-                # count number of predictions that accurately predict unannotated
-                n_correct_predictions += torch.sum(pred < 0.5).item()  # d_model should predict 0 for unannotated
+                    # count number of predictions that accurately predict unannotated
+                    n_correct_predictions += torch.sum(pred < 0.5).item()  # d_model should predict 0 for unannotated
 
-                if i == 0:
-                    logging.info(f'fake pred:{pred.detach()}')
-                    logging.info(f'n_correct_predictions:{n_correct_predictions}')
+                    if i == 0:
+                        logging.info(f'fake pred:{pred.detach()}')
+                        logging.info(f'n_correct_predictions:{n_correct_predictions}')
 
-                # 2 - compute forward pass on discriminator using annotated data
-                # combine inputs and probability map
-                annotated_inputs = inputs[annotated_idx]  # (B, C, H, W)
-                annotated_targets = targets[annotated_idx]  # (B, H, W) targets only has a single class
-                d_input = _combine_input_and_map(annotated_inputs,
-                                                 annotated_targets.unsqueeze(1))  # unsqueeze to match inputs
+                    # 2 - compute forward pass on discriminator using annotated data
+                    # combine inputs and probability map
+                    annotated_inputs = inputs[annotated_idx]  # (B, C, H, W)
+                    annotated_targets = targets[annotated_idx]  # (B, H, W) targets only has a single class
+                    d_input = _combine_input_and_map(annotated_inputs,
+                                                     annotated_targets.unsqueeze(1))  # unsqueeze to match inputs
 
-                # forward pass
-                pred = d_model(d_input, i)
+                    # forward pass
+                    pred = d_model(d_input, i)
 
-                # count number of predictions that accurately predict unannotated
-                n_correct_predictions += torch.sum(pred >= 0.5).item()  # d_model should predict 1 for annotated
+                    # count number of predictions that accurately predict unannotated
+                    n_correct_predictions += torch.sum(pred >= 0.5).item()  # d_model should predict 1 for annotated
 
-                if i == 0:
-                    logging.info(f'real pred:{pred.detach()}')
-                    logging.info(f'n_correct_predictions:{n_correct_predictions}')
+                    if i == 0:
+                        logging.info(f'real pred:{pred.detach()}')
+                        logging.info(f'n_correct_predictions:{n_correct_predictions}')
 
                 # delete mini-batch from device
                 del inputs
@@ -418,11 +420,6 @@ class Validation:
             total_val_loss /= n_mini_batches
             total_iou_score /= n_mini_batches
             discriminator_acc = n_correct_predictions / total_inputs
-
-
-            logging.info(f'total_inputs:{total_inputs}')
-            logging.info(f'len(self.dataloader):{len(self.dataloader)}')
-            logging.info(f'len(self.dataloader.dataset):{len(self.dataloader.dataset)}')
 
             # build stats dictionary
             stats = {'val_loss': total_val_loss, 'val_acc': val_acc, 'val_iou_score': total_iou_score,

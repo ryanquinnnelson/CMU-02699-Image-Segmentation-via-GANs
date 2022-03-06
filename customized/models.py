@@ -32,7 +32,7 @@ class ModelHandler:
 
         elif wandb_config.sn_model_type == 'ZhengSN':
 
-            input_channels = wandb_config.input_channels
+            input_channels = wandb_config.sn_input_channels
             sn = ZhengSN(input_channels)
 
         if wandb_config.en_model_type == 'ENLite':
