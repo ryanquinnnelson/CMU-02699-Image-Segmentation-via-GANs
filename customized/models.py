@@ -42,6 +42,7 @@ class ModelHandler:
             en = ZhengEN()
         elif wandb_config.en_model_type == 'FlexVGG':
 
+            input_block_depth = wandb_config.en_input_block_depth
             num_fcn_blocks = wandb_config.en_num_fcn_blocks
             depth_fcn_block = wandb_config.en_depth_fcn_block
             input_channels = wandb_config.en_input_channels
@@ -52,7 +53,8 @@ class ModelHandler:
             first_linear_layer_out_features = wandb_config.en_first_linear_layer_out_features
             out_features = wandb_config.en_out_features
 
-            en = FlexVGG(num_fcn_blocks, depth_fcn_block, input_channels, first_layer_out_channels, block_pattern,
+            en = FlexVGG(input_block_depth, num_fcn_blocks, depth_fcn_block, input_channels, first_layer_out_channels,
+                         block_pattern,
                          depth_linear_block, linear_block_pattern, first_linear_layer_out_features, out_features)
 
         logging.info(f'Generator model initialized:\n{sn}')

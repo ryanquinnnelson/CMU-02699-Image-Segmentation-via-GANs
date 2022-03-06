@@ -176,7 +176,7 @@ class Training:
 
         # process mini-batches
         for i, (inputs, targets) in enumerate(self.dataloader):
-            logging.info(f'training batch:{i}')
+            # logging.info(f'training batch:{i}')
             # logging.info(f'inputs.shape:{inputs.shape}')
             # prep
             g_optimizer.zero_grad()
@@ -346,7 +346,7 @@ class Validation:
 
             # process mini-batches
             for i, (inputs, targets) in enumerate(self.dataloader):
-                logging.info(f'validation batch:{i}')
+                # logging.info(f'validation batch:{i}')
                 total_inputs += len(inputs)
 
                 # prep
@@ -378,7 +378,8 @@ class Validation:
                     # 1 - compute forward pass on discriminator using unannotated data
                     # combine inputs and probability map
                     unannotated_inputs = inputs[unannotated_idx]  # (B, C, H, W)
-                    unannotated_out = out[unannotated_idx, 0, :, :]  # 1 class to match inputs + targets shape, (B, H, W)
+                    unannotated_out = out[unannotated_idx, 0, :,
+                                      :]  # 1 class to match inputs + targets shape, (B, H, W)
                     d_input = _combine_input_and_map(unannotated_inputs,
                                                      unannotated_out.unsqueeze(1))  # unsqueeze to match inputs
                     # forward pass
