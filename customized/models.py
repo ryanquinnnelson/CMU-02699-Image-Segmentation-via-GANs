@@ -633,39 +633,40 @@ def _generate_linear_size_lists(in_size, linear_pattern, block_depth):
     return in_sizes_list, out_sizes_list
 
 
-def _calc_conversion_feature_size(num_fcn_blocks, depth_fcn_block, first_layer_out_channels, block_pattern):
+def _calc_conversion_feature_size(num_fcn_blocks, depth_fcn_block, first_layer_out_channels, fcn_block_pattern):
     """
     This is a temporary workaround because LazyLinear allocates way too much memory when performing the dummy forward() pass to determine in_features.
     Args:
         num_fcn_blocks:
         depth_fcn_block:
         first_layer_out_channels:
-        block_pattern:
+        fcn_block_pattern:
 
     Returns:
 
     """
     width_times_height = 0
     if first_layer_out_channels == 64:
-        if block_pattern == 'single_run':
-            if num_fcn_blocks == 1:
-                width_times_height = 224 * 332
-            elif num_fcn_blocks == 2:
-                width_times_height = 113 * 167
-            elif num_fcn_blocks == 3:
-                width_times_height = 57 * 84
-        elif block_pattern == 'double_run':
+        if fcn_block_pattern == 'single_run':
+            if depth_fcn_block == 1:
+                if num_fcn_blocks == 1:
+                    width_times_height = 113 * 167
+                elif num_fcn_blocks == 2:
+                    width_times_height = 57 * 84
+                elif num_fcn_blocks == 3:
+                    width_times_height = 29 * 43
+        elif fcn_block_pattern == 'double_run':
             if depth_fcn_block == 2:
                 if num_fcn_blocks == 4:
-                    width_times_height = 29 * 43
-                elif num_fcn_blocks == 5:
                     width_times_height = 15 * 22
-                elif num_fcn_blocks == 6:
+                elif num_fcn_blocks == 5:
                     width_times_height = 8 * 12
+                elif num_fcn_blocks == 6:
+                    width_times_height = 5 * 7
 
     channels = 0
     if first_layer_out_channels == 64:
-        if block_pattern == 'single_run':
+        if fcn_block_pattern == 'single_run':
             if depth_fcn_block == 1:
                 if num_fcn_blocks == 1:
                     channels = 128
@@ -680,7 +681,7 @@ def _calc_conversion_feature_size(num_fcn_blocks, depth_fcn_block, first_layer_o
                     channels = 1024
                 elif num_fcn_blocks == 3:
                     channels = 4096
-        elif block_pattern == 'double_run':
+        elif fcn_block_pattern == 'double_run':
             if depth_fcn_block == 2:
                 if num_fcn_blocks == 4:
                     channels = 1024
@@ -693,7 +694,8 @@ def _calc_conversion_feature_size(num_fcn_blocks, depth_fcn_block, first_layer_o
 
 
 class FlexVGG(nn.Module):
-    def __init__(self, num_fcn_blocks=1, depth_fcn_block=1, input_channels=4, first_layer_out_channels=64,
+    def __init__(self, input_block_depth=1, num_fcn_blocks=1, depth_fcn_block=1, input_channels=4,
+                 first_layer_out_channels=64,
                  fcn_block_pattern='single_run', depth_linear_block=1, linear_block_pattern='single_run',
                  first_linear_layer_out_features=64, out_features=1):
         super().__init__()
@@ -702,7 +704,16 @@ class FlexVGG(nn.Module):
 
         # add input block
         block_number = 0
-        self.input_block = CnnBlock(block_number, input_channels, first_layer_out_channels)
+        self.input_block = nn.Sequential()
+        curr_in_channels = input_channels
+        curr_out_channels = first_layer_out_channels
+
+        for i in range(input_block_depth):
+            cnn_block = CnnBlock(block_number, curr_in_channels, curr_out_channels)
+            self.input_block.add_module('cnn' + str(i), cnn_block)
+
+            # all remaining cnn blocks in the input block have matching input and output channels
+            curr_in_channels = cnn_block.out_channels
 
         # add fcn block
         fcn_blocks = []
