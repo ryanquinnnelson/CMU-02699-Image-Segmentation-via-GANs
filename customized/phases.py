@@ -57,7 +57,7 @@ class PhaseHandler:
         Returns: Testing object
 
         """
-        testing_phase = Testing(wandb_config, devicehandler, output_dir, test_loader)
+        testing_phase = Testing(devicehandler, test_loader, wandb_config, output_dir)
         return testing_phase
 
 
