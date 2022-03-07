@@ -2,11 +2,13 @@
 All things related to training, validation, and testing phases.
 """
 
+import os
 import logging
 
 import numpy as np
 import torch
 import torch.nn as nn
+import torchvision.transforms as transforms
 
 
 class PhaseHandler:
@@ -460,20 +462,37 @@ class Testing:
 
         logging.info(f'Running epoch {epoch}/{num_epochs} of testing...')
 
-        # g_model = models[0]
-        # with torch.no_grad():  # deactivate autograd engine to improve efficiency
-        #
-        #     # Set model in validation mode
-        #     g_model.eval()
-        #
-        #     # process mini-batches
-        #     for i, (inputs, targets) in enumerate(self.dataloader):
-        #         # prep
-        #         inputs, targets = self.devicehandler.move_data_to_device(g_model, inputs, targets)
-        #
-        #         # compute forward pass
-        #         out = g_model.forward(inputs)
-        #
-        #         # format and save output
+        if epoch == num_epochs:  # perform this step on the last epoch only
+
+            g_model = models[0]
+            count = 0
+            with torch.no_grad():  # deactivate autograd engine to improve efficiency
+
+                # Set model in validation mode
+                g_model.eval()
+
+                # process mini-batches
+                for i, (inputs, targets) in enumerate(self.dataloader):
+                    # prep
+                    inputs, targets = self.devicehandler.move_data_to_device(g_model, inputs, targets)
+
+                    # compute forward pass
+                    out = g_model.forward(inputs)
+
+                    # convert output to 0 background and 1 segment
+                    out[out >= 0.5] = 1
+                    out[out < 0.5] = 0
+
+                    # format and save output
+                    for j, each in enumerate(out):
+                        # convert tensor to image
+                        t = transforms.ToPILImage()
+                        img = t(each)
+
+                        # save image
+                        filepath = os.path.join(self.output_dir,
+                                                'output.epoch' + str(epoch) + '.img' + str(count) + '.bmp')
+                        img.save(filepath)
+                        count += 1
 
         return {}  # empty dictionary
