@@ -19,6 +19,7 @@ class DatasetHandler:
     """
     Defines object to initialize Dataset objects.
     """
+
     def __init__(self, data_dir):
         """
         Initialize DatasetHandler
@@ -46,7 +47,7 @@ class DatasetHandler:
 
         # initialize dataset
         t = _compose_transforms(train_transforms, resize_height)
-        dataset = ImageDataset(train_dir, train_target_dir, t)
+        dataset = ImageDataset(train_dir, train_target_dir, 'train', t)
         logging.info(f'Loaded {len(dataset)} training images.')
         return dataset
 
@@ -76,7 +77,7 @@ class DatasetHandler:
             t = _compose_transforms(['Resize', 'ToTensor'], resize_height)
 
         # initialize dataset
-        dataset = ImageDataset(val_dir, val_target_dir, t)
+        dataset = ImageDataset(val_dir, val_target_dir, 'val', t)
         logging.info(f'Loaded {len(dataset)} validation images.')
         return dataset
 
@@ -105,7 +106,7 @@ class DatasetHandler:
             t = _compose_transforms(['Resize', 'ToTensor'], resize_height)
 
         # initialize dataset
-        dataset = ImageDataset(test_dir, test_target_dir, t)
+        dataset = ImageDataset(test_dir, test_target_dir, 'test', t)
         logging.info(f'Loaded {len(dataset)} test images.')
         return dataset
 
@@ -129,7 +130,7 @@ class ImageDataset(Dataset):
     Defines object that represents an image Dataset.
     """
 
-    def __init__(self, img_dir, targets_dir, transform=None):
+    def __init__(self, img_dir, targets_dir, dataset_type, transform=None):
         """
         Initialize ImageDataset.
 
@@ -141,6 +142,7 @@ class ImageDataset(Dataset):
         self.img_dir = img_dir
         self.targets_dir = targets_dir
         self.transform = transform
+        self.dataset_type = dataset_type
 
         # prepare image list
         img_list = os.listdir(img_dir)
@@ -160,16 +162,17 @@ class ImageDataset(Dataset):
         target_path = os.path.join(self.targets_dir, img_name + '_anno.bmp')
 
         img = Image.open(img_path).convert('RGB')
-        target = Image.open(target_path)#.convert('RGB')
+        target = Image.open(target_path)  # .convert('RGB')
 
         # standardize image size based on original image size
         img = img.resize((775, 522), resample=Image.BILINEAR)  # standardize image size
         target = target.resize((775, 522), resample=Image.BILINEAR)  # standardize target size
 
-        # apply matching transformations to image and target
-        img, target = _apply_transformations(img, target)
+        if self.dataset_type == 'train':
+            # apply random transformations to image and target for training set only
+            img, target = _apply_transformations(img, target)
 
-        # transform and convert to tensors
+        # resize and convert to tensors
         tensor_img = self.transform(img)
         tensor_target = self.transform(target)  # (C, H, W)
 

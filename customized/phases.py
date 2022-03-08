@@ -446,6 +446,7 @@ class Testing:
         self.devicehandler = devicehandler
         self.output_dir = output_dir
         self.dataloader = dataloader
+        self.run_name = wandb_config.run_name
 
     def run_epoch(self, epoch, num_epochs, models):
         """
@@ -477,21 +478,22 @@ class Testing:
                     inputs, targets = self.devicehandler.move_data_to_device(g_model, inputs, targets)
 
                     # compute forward pass
-                    out = g_model.forward(inputs)
+                    out = g_model.forward(inputs, i)
 
-                    # convert output to 0 background and 1 segment
-                    out[out >= 0.5] = 1
-                    out[out < 0.5] = 0
+                    # convert two channels into single output label
+                    # convert datatype to a type that pillow can use
+                    labels_out = out.argmax(axis=1).to(torch.float32)
 
                     # format and save output
-                    for j, each in enumerate(out):
+                    for j, each in enumerate(labels_out):
                         # convert tensor to image
                         t = transforms.ToPILImage()
                         img = t(each)
 
                         # save image
                         filepath = os.path.join(self.output_dir,
-                                                'output.epoch' + str(epoch) + '.img' + str(count) + '.bmp')
+                                                'output.' + self.run_name + '.epoch.' + str(epoch).zfill(3) + '.img.' + str(
+                                                    count).zfill(2) + '.bmp')
                         img.save(filepath)
                         count += 1
 
