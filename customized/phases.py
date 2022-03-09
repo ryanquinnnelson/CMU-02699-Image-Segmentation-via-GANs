@@ -492,7 +492,8 @@ class Testing:
 
                         # save image
                         filepath = os.path.join(self.output_dir,
-                                                'output.' + self.run_name + '.epoch.' + str(epoch).zfill(3) + '.img.' + str(
+                                                'output.' + self.run_name + '.epoch.' + str(epoch).zfill(
+                                                    3) + '.img.' + str(
                                                     count).zfill(2) + '.bmp')
                         img.save(filepath)
                         count += 1
