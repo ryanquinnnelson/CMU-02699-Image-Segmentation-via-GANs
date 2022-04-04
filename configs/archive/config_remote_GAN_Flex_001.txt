@@ -1,5 +1,5 @@
 [DEFAULT]
-run_name = GAN_Flex_001_ZhengEN
+run_name = ConcatenationFCN-03_DAN_EN
 
 
 [debug]

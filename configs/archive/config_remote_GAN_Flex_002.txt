@@ -1,5 +1,5 @@
 [DEFAULT]
-run_name = GAN_Flex_002_FlexVGG
+run_name = ConcatenationFCN-03_FlexVGG
 
 
 [debug]

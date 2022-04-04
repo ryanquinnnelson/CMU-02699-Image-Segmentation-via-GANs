@@ -1,5 +1,5 @@
 [DEFAULT]
-run_name = GAN_Concat_Flex_014_60
+run_name = GAN_Concat_Flex_014_0
 
 
 [debug]
@@ -24,8 +24,8 @@ output_dir = /home/ubuntu/output
 checkpoint_dir = /data/checkpoints
 checkpoint_cadence = 20
 delete_existing_checkpoints = False
-load_from_checkpoint=True
-checkpoint_file =  /data/checkpoints/GAN_Concat_Flex_014_60.checkpoint.300.pt
+load_from_checkpoint=False
+checkpoint_file = None
 
 
 [data]
@@ -79,7 +79,7 @@ en_out_features=1
 
 
 [hyperparameters]
-num_epochs = 500
+num_epochs = 300
 sn_criterion=CrossEntropyLoss
 en_criterion=BCELoss
 optimizer_type=adam
@@ -95,4 +95,4 @@ scheduler_min_lr=0.00001
 use_gan = True
 sigma=0.1
 sigma_weight=300
-gan_start_epoch=60
+gan_start_epoch=1
