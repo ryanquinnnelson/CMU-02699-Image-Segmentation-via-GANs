@@ -1,0 +1,25 @@
+name: sweep_remote_grid_004
+program: /home/ubuntu/CMU-02699-Image-Segmentation-via-GANs/run_octopus.py
+method: grid
+project: CMU-02699-PROJECT
+entity: ryanquinnnelson
+metric:
+  goal: minimize
+  name: val_loss
+parameters:
+  filename:
+    values: ["/home/ubuntu/CMU-02699-Image-Segmentation-via-GANs/configs/remote/config_remote_GAN_Concat_Flex_007.txt"]
+  sigma:
+    values: [0.1,0.5,1.0]
+  sigma_weight:
+    values: [30,300]
+  en_num_fcn_blocks:
+    values: [4,5,6]
+  en_first_layer_out_channels:
+    values: [64]
+  en_depth_linear_block:
+    values: [1,2,4]
+  en_first_linear_layer_out_features:
+    values: [128,512,1024]
+
+
