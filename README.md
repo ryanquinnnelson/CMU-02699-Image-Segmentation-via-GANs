@@ -4,6 +4,8 @@ Spring 2022 Bioimage Informatics (Self-Study) project
 
 This project explores using a deep generative adversarial network (GAN) to perform semi-supervised image segmentation on the 2015 MICCAI Gland Challenge dataset.
 
+Version 2 of the code exists [here](https://github.com/ryanquinnnelson/CMU-02699-Image-Segmentation-via-GANs-v2).
+
 
 ## Run single run
 
